@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RapidReach - Public Dashboard</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#f5f5f5;
+}
+
+header{
+    background:#ff416c;
+    color:white;
+    text-align:center;
+    padding:15px;
+}
+
+.container{
+    width:90%;
+    max-width:1200px;
+    margin:20px auto;
+}
+
+.alert-box{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom:15px;
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.safe{
+    color:green;
+}
+
+.warning{
+    color:red;
+}
+
+#map{
+    height:500px;
+    width:100%;
+    border-radius:10px;
+}
+
+.info-card{
+    background:white;
+    margin-top:15px;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.logout-btn{
+    margin-top:15px;
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    background:#444;
+    color:white;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>🚗 Public Dashboard</h1>
+</header>
+
+<div class="container">
+
+    <div id="alertBox" class="alert-box safe">
+        No ambulance nearby
+    </div>
+
+    <div id="map"></div>
+
+    <div class="info-card">
+        <h3>Your Location</h3>
+        <p>Latitude: <span id="userLat">--</span></p>
+        <p>Longitude: <span id="userLng">--</span></p>
+
+        <br>
+
+        <h3>Ambulance Distance</h3>
+        <p><span id="distance">--</span> meters</p>
+
+        <button class="logout-btn" onclick="logout()">
+            Logout
+        </button>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+let map = L.map('map').setView([13.0827, 80.2707], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap'
+}).addTo(map);
+
+let userMarker;
+let ambulanceMarker;
+
+let userLat;
+let userLng;
+
+// Simulated ambulance location
+let ambulance = {
+    lat:13.0827,
+    lng:80.2707
+};
+
+// Get User Location
+if(navigator.geolocation){
+
+    navigator.geolocation.getCurrentPosition(function(position){
+
+        userLat = position.coords.latitude;
+        userLng = position.coords.longitude;
+
+        document.getElementById("userLat").innerText =
+        userLat.toFixed(6);
+
+        document.getElementById("userLng").innerText =
+        userLng.toFixed(6);
+
+        userMarker = L.marker([userLat,userLng])
+        .addTo(map)
+        .bindPopup("📍 You are here")
+        .openPopup();
+
+        map.setView([userLat,userLng],14);
+
+    });
+
+}
+
+// Update Ambulance Position Every 2 Seconds
+setInterval(updateAmbulance,2000);
+
+function updateAmbulance(){
+
+    // Demo movement
+    ambulance.lat += 0.0005;
+    ambulance.lng += 0.0005;
+
+    if(ambulanceMarker){
+        ambulanceMarker.setLatLng([ambulance.lat,ambulance.lng]);
+    }else{
+        ambulanceMarker = L.marker([ambulance.lat,ambulance.lng])
+        .addTo(map)
+        .bindPopup("🚑 Ambulance");
+    }
+
+    calculateDistance();
+}
+
+// Distance Calculation
+function calculateDistance(){
+
+    if(!userLat || !userLng) return;
+
+    let distance =
+    getDistance(userLat,userLng,ambulance.lat,ambulance.lng);
+
+    document.getElementById("distance").innerText =
+    Math.round(distance);
+
+    let alertBox =
+    document.getElementById("alertBox");
+
+    if(distance < 500){
+
+        alertBox.innerHTML =
+        "🚑 Ambulance Nearby! Please Give Way";
+
+        alertBox.className =
+        "alert-box warning";
+
+    }else{
+
+        alertBox.innerHTML =
+        "No ambulance nearby";
+
+        alertBox.className =
+        "alert-box safe";
+    }
+}
+
+// Haversine Formula
+function getDistance(lat1,lon1,lat2,lon2){
+
+    let R = 6371000;
+
+    let dLat =
+    (lat2-lat1)*Math.PI/180;
+
+    let dLon =
+    (lon2-lon1)*Math.PI/180;
+
+    let a =
+    Math.sin(dLat/2)*Math.sin(dLat/2) +
+    Math.cos(lat1*Math.PI/180) *
+    Math.cos(lat2*Math.PI/180) *
+    Math.sin(dLon/2) *
+    Math.sin(dLon/2);
+
+    let c =
+    2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+
+    return R*c;
+}
+
+function logout(){
+    window.location.href = "login.html";
+}
+
+</script>
+
+</body>
+</html>
