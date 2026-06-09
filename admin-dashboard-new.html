@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidReach - Admin Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .admin-container {
+            padding: 2rem;
+            background: var(--bg-light);
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .stat-card:nth-child(2) {
+            border-top-color: var(--secondary-color);
+        }
+
+        .stat-card:nth-child(3) {
+            border-top-color: var(--accent-color);
+        }
+
+        .stat-card:nth-child(4) {
+            border-top-color: #3498DB;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            color: var(--secondary-color);
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            color: var(--accent-color);
+        }
+
+        .stat-card:nth-child(4) .stat-value {
+            color: #3498DB;
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        .stat-change.negative {
+            color: var(--danger-color);
+        }
+
+        .admin-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 1.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .section-body {
+            padding: 1.5rem;
+        }
+
+        .menu-list {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-light);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .menu-link:hover {
+            background: var(--gray-100);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .menu-icon {
+            font-size: 1.25rem;
+        }
+
+        .quick-actions {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            background: var(--white);
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary-color);
+            background: rgba(220, 20, 60, 0.05);
+        }
+
+        .activity-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            font-size: 1.5rem;
+            min-width: 2rem;
+            text-align: center;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .badge-success {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .badge-warning {
+            background: rgba(255, 165, 0, 0.1);
+            color: var(--accent-color);
+        }
+
+        .badge-danger {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+        }
+
+        @media (max-width: 1200px) {
+            .admin-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+            }
+
+            .admin-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container flex-between">
+            <div class="navbar-brand">
+                <span>👨‍💼</span>
+                <span>RapidReach Admin</span>
+            </div>
+            <div class="navbar-user">
+                <span id="adminName" style="color: var(--text-secondary); font-weight: 500;"></span>
+                <button class="btn btn-secondary btn-small" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Dashboard -->
+    <div class="admin-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">📊 System Dashboard</h1>
+            <p class="page-subtitle">Real-time platform monitoring and management</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="admin-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-change">↑ 12.5% from last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Active Ambulances</div>
+                <div class="stat-value" id="activeAmbulances">0</div>
+                <div class="stat-change">↑ 8.3% from last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Partner Hospitals</div>
+                <div class="stat-value" id="totalHospitals">0</div>
+                <div class="stat-change">↑ 5.2% from last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Emergency Alerts</div>
+                <div class="stat-value" id="emergencyAlerts">0</div>
+                <div class="stat-change negative">↓ 3.1% from last month</div>
+            </div>
+        </div>
+
+        <!-- Main Sections -->
+        <div class="admin-sections">
+            <!-- User Management -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">👥 User Management</h2>
+                </div>
+                <div class="section-body">
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('users')">
+                                <span class="menu-icon">👤</span>
+                                <span>Manage Users</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('drivers')">
+                                <span class="menu-icon">🚑</span>
+                                <span>Manage Drivers</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('permissions')">
+                                <span class="menu-icon">🔐</span>
+                                <span>Permissions & Roles</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('blocked')">
+                                <span class="menu-icon">🚫</span>
+                                <span>Blocked Users</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Hospital Management -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">🏥 Hospital Management</h2>
+                </div>
+                <div class="section-body">
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('hospitals')">
+                                <span class="menu-icon">🏥</span>
+                                <span>Manage Hospitals</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('beds')">
+                                <span class="menu-icon">🛏️</span>
+                                <span>Bed Management</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('departments')">
+                                <span class="menu-icon">🔬</span>
+                                <span>Departments</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('operators')">
+                                <span class="menu-icon">👨‍⚕️</span>
+                                <span>Hospital Operators</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Ambulance Management -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">🚑 Ambulance Management</h2>
+                </div>
+                <div class="section-body">
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('ambulances')">
+                                <span class="menu-icon">🚑</span>
+                                <span>All Ambulances</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('tracking')">
+                                <span class="menu-icon">📍</span>
+                                <span>Live Tracking</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('maintenance')">
+                                <span class="menu-icon">🔧</span>
+                                <span>Maintenance Logs</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('fleet')">
+                                <span class="menu-icon">📊</span>
+                                <span>Fleet Analytics</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Analytics & Reports -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">📈 Analytics</h2>
+                </div>
+                <div class="section-body">
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('analytics')">
+                                <span class="menu-icon">📊</span>
+                                <span>Performance Metrics</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('heatmap')">
+                                <span class="menu-icon">🔥</span>
+                                <span>Heatmap</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('reports')">
+                                <span class="menu-icon">📄</span>
+                                <span>Generate Reports</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('export')">
+                                <span class="menu-icon">💾</span>
+                                <span>Export Data</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- System Monitoring -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">⚙️ System</h2>
+                </div>
+                <div class="section-body">
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('settings')">
+                                <span class="menu-icon">⚙️</span>
+                                <span>System Settings</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('logs')">
+                                <span class="menu-icon">📝</span>
+                                <span>System Logs</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('backup')">
+                                <span class="menu-icon">💿</span>
+                                <span>Backup & Recovery</span>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <div class="menu-link" onclick="navigateToSection('security')">
+                                <span class="menu-icon">🔒</span>
+                                <span>Security Settings</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">🔔 Recent Activity</h2>
+                </div>
+                <div class="section-body">
+                    <div class="activity-feed" id="activityFeed">
+                        <div class="activity-item">
+                            <div class="activity-icon">✅</div>
+                            <div class="activity-content">
+                                <div class="activity-title">New Hospital Registration <span class="badge badge-success">New</span></div>
+                                <div class="activity-time">5 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">🚨</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Emergency Alert Reported</div>
+                                <div class="activity-time">12 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">⚠️</div>
+                            <div class="activity-content">
+                                <div class="activity-title">System Error <span class="badge badge-danger">Alert</span></div>
+                                <div class="activity-time">1 hour ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">🔄</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Database Backup Completed</div>
+                                <div class="activity-time">3 hours ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js"></script>
+
+    <!-- Configuration & Modules -->
+    <script src="config/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/route-protection.js"></script>
+
+    <script>
+        async function initDashboard() {
+            // Check authentication
+            if (!await window.routeProtection.checkAuthentication()) {
+                return;
+            }
+
+            // Get user info
+            const user = await window.routeProtection.getUserInfo();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('adminName').textContent = user.phoneNumber;
+
+            // Load dashboard data
+            loadDashboardData();
+        }
+
+        async function loadDashboardData() {
+            try {
+                const db = window.firebaseConfig.db;
+
+                // Get total users
+                const usersSnapshot = await db.collection('users').get();
+                document.getElementById('totalUsers').textContent = usersSnapshot.docs.length;
+
+                // Get hospitals
+                const hospitalsSnapshot = await db.collection('hospitals').get();
+                document.getElementById('totalHospitals').textContent = hospitalsSnapshot.docs.length;
+
+                // Get ambulances
+                const ambulancesSnapshot = await db.collection('ambulances').get();
+                const activeCount = ambulancesSnapshot.docs.filter(doc => doc.data().status === 'active').length;
+                document.getElementById('activeAmbulances').textContent = activeCount;
+
+                // Get emergency alerts
+                const alertsSnapshot = await db.collection('emergencyAlerts').where('status', '==', 'active').get();
+                document.getElementById('emergencyAlerts').textContent = alertsSnapshot.docs.length;
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function navigateToSection(section) {
+            window.notificationSystem.sendNotification({
+                type: 'info',
+                title: 'Coming Soon',
+                message: `${section} management section is coming soon`
+            });
+        }
+
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                await window.routeProtection.logout();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

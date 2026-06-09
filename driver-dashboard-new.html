@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidReach - Ambulance Driver Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            height: calc(100vh - 80px);
+            padding: 2rem;
+            background: var(--bg-light);
+        }
+
+        #map {
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-badge.tracking {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .status-badge.idle {
+            background: rgba(160, 174, 192, 0.1);
+            color: #A0AEC0;
+        }
+
+        .location-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-track {
+            background: linear-gradient(135deg, var(--secondary-color), #45a049);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-track:hover:not(:disabled) {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, var(--danger-color), #d73c28);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .btn-emergency {
+            background: linear-gradient(135deg, #FF6B35, #F7931E);
+            color: white;
+            grid-column: 1 / -1;
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            animation: pulse-emergency 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-emergency {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .alert-banner {
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-banner.info {
+            background: rgba(52, 152, 219, 0.1);
+            color: #3498DB;
+            border-left: 4px solid #3498DB;
+        }
+
+        .alert-banner.warning {
+            background: rgba(255, 165, 0, 0.1);
+            color: var(--accent-color);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .route-list {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .route-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .route-item:last-child {
+            border-bottom: none;
+        }
+
+        .route-item:hover {
+            background: var(--gray-50);
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            #map {
+                height: 400px;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                height: auto;
+                padding: 1rem;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-emergency {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container flex-between">
+            <div class="navbar-brand">
+                <span>🚑</span>
+                <span>RapidReach Driver</span>
+            </div>
+            <div class="navbar-user">
+                <span id="userPhone" style="color: var(--text-secondary); font-weight: 500;"></span>
+                <button class="btn btn-secondary btn-small" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard -->
+    <div class="dashboard-container">
+        <!-- Map Section -->
+        <div id="map"></div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Ambulance Status</h3>
+                    <div class="status-badge" id="statusBadge">Idle</div>
+                </div>
+
+                <div class="alert-banner info" id="infoAlert" style="display: none;">
+                    <span>ℹ️</span>
+                    <div>
+                        <strong>GPS Status:</strong> <span id="gpsStatus">Connecting...</span>
+                    </div>
+                </div>
+
+                <div class="location-info">
+                    <div class="info-item">
+                        <div class="info-label">Latitude</div>
+                        <div class="info-value" id="latitude">--</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Longitude</div>
+                        <div class="info-value" id="longitude">--</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Accuracy</div>
+                        <div class="info-value" id="accuracy">--</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Speed</div>
+                        <div class="info-value" id="speed">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Card -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Controls</h3>
+                <div class="controls">
+                    <button class="control-btn btn-track" id="startBtn" onclick="startTracking()">
+                        ▶️ Start Tracking
+                    </button>
+                    <button class="control-btn btn-stop" id="stopBtn" onclick="stopTracking()" disabled>
+                        ⏹️ Stop Tracking
+                    </button>
+                </div>
+                <button class="control-btn btn-emergency" onclick="emergencyMode()">
+                    🚨 Emergency Mode
+                </button>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Trip Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Distance</div>
+                        <div class="stat-value" id="distance">0 km</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Duration</div>
+                        <div class="stat-value" id="duration">0:00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Speed</div>
+                        <div class="stat-value" id="avgSpeed">0 km/h</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Locations</div>
+                        <div class="stat-value" id="locationCount">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Configuration & Modules -->
+    <script src="config/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/gps-tracker.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/route-protection.js"></script>
+
+    <script>
+        let map;
+        let ambulanceMarker;
+        let routePath = [];
+        let tripStartTime;
+        let tripDistance = 0;
+        let totalLocations = 0;
+
+        async function initDashboard() {
+            // Check authentication
+            if (!await window.routeProtection.checkAuthentication()) {
+                return;
+            }
+
+            // Get user info
+            const user = await window.routeProtection.getUserInfo();
+            if (!user || user.role !== 'driver') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('userPhone').textContent = user.phoneNumber;
+
+            // Initialize map
+            initMap();
+
+            // Setup location update listeners
+            window.gpsTracker.onLocationUpdate((location) => {
+                updateLocationUI(location);
+                updateMapMarker(location);
+                updateTripStats(location);
+            });
+
+            window.gpsTracker.onTrackingError((error) => {
+                window.notificationSystem.sendNotification({
+                    type: 'warning',
+                    title: 'GPS Error',
+                    message: error.message
+                });
+            });
+
+            // Listen for tracking events
+            window.addEventListener('trackingStarted', () => {
+                updateStatusUI('tracking');
+            });
+
+            window.addEventListener('trackingStopped', () => {
+                updateStatusUI('idle');
+            });
+        }
+
+        function initMap() {
+            map = L.map('map').setView([13.0827, 80.2707], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(map);
+        }
+
+        async function startTracking() {
+            try {
+                window.notificationSystem.sendNotification({
+                    type: 'info',
+                    title: 'Starting GPS Tracking',
+                    message: 'Requesting location access...'
+                });
+
+                await window.gpsTracker.startTracking();
+                tripStartTime = Date.now();
+                tripDistance = 0;
+                totalLocations = 0;
+                routePath = [];
+
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+
+                window.notificationSystem.sendNotification({
+                    type: 'success',
+                    title: 'Tracking Started',
+                    message: 'Your location is now being tracked in real-time'
+                });
+            } catch (error) {
+                window.notificationSystem.sendNotification({
+                    type: 'error',
+                    title: 'Tracking Error',
+                    message: error.message
+                });
+            }
+        }
+
+        async function stopTracking() {
+            try {
+                await window.gpsTracker.stopTracking();
+
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+
+                window.notificationSystem.sendNotification({
+                    type: 'success',
+                    title: 'Tracking Stopped',
+                    message: `Tracked ${totalLocations} locations`
+                });
+            } catch (error) {
+                window.notificationSystem.sendNotification({
+                    type: 'error',
+                    title: 'Error',
+                    message: error.message
+                });
+            }
+        }
+
+        function emergencyMode() {
+            window.notificationSystem.sendNotification({
+                type: 'emergency',
+                title: '🚨 Emergency Mode Activated',
+                message: 'Emergency alert sent to nearby hospitals and responders',
+                requireInteraction: true
+            });
+
+            window.notificationSystem.sendEmergencyAlert({
+                latitude: window.gpsTracker.currentLocation?.latitude || 13.0827,
+                longitude: window.gpsTracker.currentLocation?.longitude || 80.2707,
+                type: 'emergency',
+                description: 'Emergency mode activated by ambulance driver',
+                severity: 'critical'
+            });
+        }
+
+        function updateLocationUI(location) {
+            document.getElementById('latitude').textContent = location.latitude.toFixed(6);
+            document.getElementById('longitude').textContent = location.longitude.toFixed(6);
+            document.getElementById('accuracy').textContent = location.accuracy.toFixed(1) + 'm';
+            document.getElementById('speed').textContent = (location.speed || 0).toFixed(1) + ' m/s';
+            document.getElementById('gpsStatus').textContent = 'Connected';
+
+            totalLocations++;
+            document.getElementById('locationCount').textContent = totalLocations;
+        }
+
+        function updateMapMarker(location) {
+            if (ambulanceMarker) {
+                ambulanceMarker.setLatLng([location.latitude, location.longitude]);
+            } else {
+                ambulanceMarker = L.marker([location.latitude, location.longitude], {
+                    icon: L.icon({
+                        iconUrl: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Ctext y="50" font-size="60" font-weight="bold"%3E🚑%3C/text%3E%3C/svg%3E',
+                        iconSize: [40, 40]
+                    })
+                }).addTo(map);
+            }
+
+            map.setView([location.latitude, location.longitude], 16);
+
+            // Add to route path
+            routePath.push([location.latitude, location.longitude]);
+            if (routePath.length > 1) {
+                const lastTwo = routePath.slice(-2);
+                L.polyline(lastTwo, {
+                    color: '#DC143C',
+                    weight: 3,
+                    opacity: 0.7
+                }).addTo(map);
+            }
+        }
+
+        function updateTripStats(location) {
+            if (routePath.length > 1) {
+                const lastLocation = routePath[routePath.length - 2];
+                const distance = window.gpsTracker.constructor.calculateDistance(
+                    lastLocation[0], lastLocation[1],
+                    location.latitude, location.longitude
+                );
+                tripDistance += distance;
+            }
+
+            const tripDurationSecs = Math.floor((Date.now() - tripStartTime) / 1000);
+            const hours = Math.floor(tripDurationSecs / 3600);
+            const minutes = Math.floor((tripDurationSecs % 3600) / 60);
+            const seconds = tripDurationSecs % 60;
+
+            document.getElementById('distance').textContent = (tripDistance / 1000).toFixed(2) + ' km';
+            document.getElementById('duration').textContent = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (tripDurationSecs > 0) {
+                const avgSpeed = (tripDistance / tripDurationSecs) * 3.6; // Convert to km/h
+                document.getElementById('avgSpeed').textContent = avgSpeed.toFixed(1) + ' km/h';
+            }
+        }
+
+        function updateStatusUI(status) {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = status === 'tracking' ? 'Tracking...' : 'Idle';
+            badge.className = `status-badge ${status === 'tracking' ? 'tracking' : 'idle'}`;
+        }
+
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                await window.routeProtection.logout();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
