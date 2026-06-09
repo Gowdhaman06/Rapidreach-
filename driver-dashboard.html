@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RapidReach - Driver Dashboard</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f5f5f5;
+}
+
+header{
+    background:#ff416c;
+    color:white;
+    text-align:center;
+    padding:15px;
+}
+
+.container{
+    width:90%;
+    max-width:1200px;
+    margin:20px auto;
+}
+
+.status-card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+}
+
+.status-card h3{
+    color:#ff416c;
+    margin-bottom:10px;
+}
+
+#map{
+    height:500px;
+    width:100%;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.controls{
+    text-align:center;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    margin:10px;
+    font-size:16px;
+}
+
+.start-btn{
+    background:green;
+    color:white;
+}
+
+.stop-btn{
+    background:red;
+    color:white;
+}
+
+.logout-btn{
+    background:#444;
+    color:white;
+}
+
+.location-info{
+    margin-top:10px;
+    font-size:16px;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>🚑 Driver Dashboard</h1>
+</header>
+
+<div class="container">
+
+    <div class="status-card">
+        <h3>Ambulance Status</h3>
+
+        <p id="status">Status: Not Tracking</p>
+
+        <div class="location-info">
+            <p>Latitude: <span id="lat">--</span></p>
+            <p>Longitude: <span id="lng">--</span></p>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="controls">
+        <button class="start-btn" onclick="startTracking()">
+            Start Tracking
+        </button>
+
+        <button class="stop-btn" onclick="stopTracking()">
+            Stop Tracking
+        </button>
+
+        <button class="logout-btn" onclick="logout()">
+            Logout
+        </button>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+let map = L.map('map').setView([13.0827, 80.2707], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap'
+}).addTo(map);
+
+let marker;
+let watchId;
+
+// Start GPS Tracking
+function startTracking(){
+
+    document.getElementById("status").innerHTML =
+    "Status: Tracking Active";
+
+    if(navigator.geolocation){
+
+        watchId = navigator.geolocation.watchPosition(function(position){
+
+            let lat = position.coords.latitude;
+            let lng = position.coords.longitude;
+
+            document.getElementById("lat").innerText =
+            lat.toFixed(6);
+
+            document.getElementById("lng").innerText =
+            lng.toFixed(6);
+
+            if(marker){
+                marker.setLatLng([lat,lng]);
+            }else{
+                marker = L.marker([lat,lng])
+                .addTo(map)
+                .bindPopup("🚑 Ambulance")
+                .openPopup();
+            }
+
+            map.setView([lat,lng],15);
+
+            // Future Firebase update can be added here
+            console.log("Location Updated:",lat,lng);
+
+        });
+
+    }else{
+        alert("Geolocation not supported.");
+    }
+}
+
+// Stop Tracking
+function stopTracking(){
+
+    if(watchId){
+        navigator.geolocation.clearWatch(watchId);
+    }
+
+    document.getElementById("status").innerHTML =
+    "Status: Tracking Stopped";
+}
+
+// Logout
+function logout(){
+    window.location.href = "login.html";
+}
+
+</script>
+
+</body>
+</html>

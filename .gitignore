@@ -1,0 +1,119 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+.env.production
+!.env.example
+
+# Node modules and dependencies
+node_modules/
+npm-debug.log
+npm-debug.log.*
+yarn-error.log
+yarn-debug.log
+
+# Build directories
+dist/
+build/
+.next/
+out/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+*.dll
+*.exe
+*.o
+*.so
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-errors.log
+.firebaserc
+
+# Testing
+coverage/
+*.lcov
+test-results/
+.nyc_output/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.backup
+*.bak
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+lerna-debug.log*
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+
+# Credentials and secrets (IMPORTANT!)
+config/firebase-config-prod.js
+.secrets/
+secrets.json
+credentials.json
+*.pem
+*.key
+*.cert
+
+# Build outputs
+dist/
+*.min.css
+*.min.js
+*.bundle.js
+
+# Documentation
+docs/private/
+*.pdf
+*.docx
+
+# Misc
+.cache/
+.parcel-cache/
+dist/
+*.zip
+*.tar.gz
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# GitHub
+.github/workflows/secrets.yml
+
+# Keep these important files
+!.env.example
+!.gitkeep
+!LICENSE
+!README.md

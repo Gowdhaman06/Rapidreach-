@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="RapidReach - Ambulance Priority System Login with OTP Verification">
+    <meta name="description" content="RapidReach - Ambulance Priority System Firebase Phone Authentication">
     <title>RapidReach - Ambulance Priority System Login</title>
     <style>
         /* ===========================
@@ -80,6 +80,15 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
             }
         }
 
@@ -236,7 +245,15 @@
             border-color: var(--primary-light);
         }
 
-        /* Remove spinner from number input */
+        input[type="tel"]:disabled,
+        input[type="text"]:disabled,
+        select:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Remove spinner from tel input */
         input[type="tel"]::-webkit-outer-spin-button,
         input[type="tel"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -295,6 +312,10 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-primary {
@@ -352,6 +373,21 @@
             box-shadow: var(--shadow-lg);
         }
 
+        .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid var(--white);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
         /* ===========================
            HIDDEN ELEMENTS
            =========================== */
@@ -400,41 +436,6 @@
             background: rgba(52, 152, 219, 0.1);
             color: #3498DB;
             border-left-color: #3498DB;
-        }
-
-        /* ===========================
-           OTP DISPLAY
-           =========================== */
-
-        .otp-display {
-            background: linear-gradient(135deg, var(--background-light), var(--border-gray));
-            border: 2px dashed var(--primary-color);
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-            margin-bottom: 20px;
-            display: none;
-            animation: slideInUp 0.4s ease-out;
-        }
-
-        .otp-display.show {
-            display: block;
-        }
-
-        .otp-display p {
-            font-size: 12px;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .otp-code {
-            font-size: 28px;
-            font-weight: bold;
-            color: var(--primary-color);
-            letter-spacing: 4px;
-            font-family: 'Courier New', monospace;
         }
 
         /* ===========================
@@ -488,6 +489,27 @@
         .progress-line.filled {
             background: var(--success-green);
             animation: slideInRight 0.5s ease-out;
+        }
+
+        /* ===========================
+           TIMER FOR OTP RESEND
+           =========================== */
+
+        .timer-text {
+            font-size: 12px;
+            color: var(--text-light);
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        /* ===========================
+           reCAPTCHA CONTAINER
+           =========================== */
+
+        .recaptcha-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
         }
 
         /* ===========================
@@ -592,7 +614,7 @@
                         <input
                             type="tel"
                             id="mobileNumber"
-                            placeholder="Enter 10-digit mobile number"
+                            placeholder="Enter your 10-digit mobile number"
                             maxlength="10"
                             inputmode="numeric"
                             autocomplete="tel"
@@ -602,13 +624,7 @@
                     <div class="error-message" id="mobileError"></div>
                 </div>
 
-                <!-- OTP Display for Demo Purpose -->
-                <div class="otp-display" id="otpDisplay">
-                    <p>Demo OTP (for testing):</p>
-                    <div class="otp-code" id="otpDisplayCode"></div>
-                </div>
-
-                <!-- OTP Input Group -->
+                <!-- OTP Input Group (Hidden until OTP is sent) -->
                 <div class="form-group hidden" id="otpGroup">
                     <label for="otpInput" class="required">Enter OTP</label>
                     <div class="input-wrapper">
@@ -624,6 +640,10 @@
                         />
                     </div>
                     <div class="error-message" id="otpError"></div>
+                    <!-- Timer for OTP resend -->
+                    <div class="timer-text" id="timerText" style="display: none;">
+                        Resend OTP in <span id="timerCount">60</span>s
+                    </div>
                 </div>
 
                 <!-- Role Selection Dropdown -->
@@ -640,10 +660,13 @@
                     <div class="error-message" id="roleError"></div>
                 </div>
 
+                <!-- reCAPTCHA Container (required by Firebase Phone Auth) -->
+                <div class="recaptcha-container" id="recaptchaContainer"></div>
+
                 <!-- Send OTP Button (Step 1) -->
                 <div class="form-group button-group" id="sendOtpButtonGroup">
                     <button type="button" class="btn-primary" id="sendOtpBtn" onclick="handleSendOTP()">
-                        Send OTP
+                        <span id="sendOtpText">Send OTP</span>
                     </button>
                 </div>
 
@@ -653,27 +676,80 @@
                         Change Number
                     </button>
                     <button type="submit" class="btn-verify" id="verifyOtpBtn">
-                        Verify OTP
+                        <span id="verifyOtpText">Verify OTP</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
+
     <!-- JavaScript Logic -->
     <script>
+        /* ===========================
+           FIREBASE INITIALIZATION
+           =========================== */
+
+        /**
+         * Firebase Configuration
+         * IMPORTANT: Replace these placeholders with your actual Firebase project credentials
+         * You can find these values in your Firebase Console:
+         * 1. Go to Project Settings (gear icon)
+         * 2. Click on your app or create a new web app
+         * 3. Copy the configuration object
+         * 
+         * Steps to set up:
+         * 1. Create a Firebase project at https://console.firebase.google.com
+         * 2. Enable Phone Authentication in Firebase Console > Authentication > Sign-in method
+         * 3. Enable reCAPTCHA v3 in Firebase Console > Authentication > Phone
+         * 4. Replace the credentials below
+         */
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY", // Replace with your apiKey
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // Replace with your authDomain
+            projectId: "YOUR_PROJECT_ID", // Replace with your projectId
+            storageBucket: "YOUR_PROJECT_ID.appspot.com", // Replace with your storageBucket
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Replace with your messagingSenderId
+            appId: "YOUR_APP_ID" // Replace with your appId
+        };
+
+        // Initialize Firebase
+        let firebase_initialized = false;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            firebase_initialized = true;
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            console.warn('Please configure Firebase credentials in the HTML file');
+        }
+
+        // Get Firebase Auth instance
+        const auth = firebase_initialized ? firebase.auth() : null;
+
+        // Set Firebase Auth language to English
+        if (auth) {
+            auth.languageCode = 'en';
+        }
+
         /* ===========================
            STATE MANAGEMENT
            =========================== */
 
         // Global application state
         const appState = {
-            mobileNumber: '',        // Stores user's mobile number
-            generatedOTP: '',        // Stores generated OTP
-            isOtpSent: false,        // Tracks if OTP has been sent
-            selectedRole: '',        // Stores selected role (driver or public)
-            attemptCount: 0,         // Tracks failed OTP verification attempts
-            maxAttempts: 3           // Maximum allowed OTP verification attempts
+            mobileNumber: '',           // Stores user's mobile number
+            selectedRole: '',           // Stores selected role (driver or public)
+            confirmationResult: null,   // Firebase confirmation result for OTP verification
+            attemptCount: 0,            // Tracks failed OTP verification attempts
+            maxAttempts: 3,             // Maximum allowed OTP verification attempts
+            otpSent: false,             // Track if OTP has been sent
+            reCaptchaVerifier: null,    // Firebase reCAPTCHA verifier
+            timerInterval: null,        // OTP resend timer
+            timerSeconds: 60            // Initial timer value in seconds
         };
 
         /* ===========================
@@ -688,6 +764,8 @@
          */
         function showStatusMessage(message, type = 'info', duration = 5000) {
             const statusElement = document.getElementById('statusMessage');
+            if (!statusElement) return;
+            
             statusElement.textContent = message;
             statusElement.className = `status-message ${type} show`;
 
@@ -703,7 +781,9 @@
          */
         function hideStatusMessage() {
             const statusElement = document.getElementById('statusMessage');
-            statusElement.classList.remove('show');
+            if (statusElement) {
+                statusElement.classList.remove('show');
+            }
         }
 
         /**
@@ -757,20 +837,21 @@
             });
 
             // Animate progress line fill
-            if (currentStep > 1) {
+            if (currentStep > 1 && progressLine) {
                 progressLine.classList.add('filled');
-            } else {
+            } else if (progressLine) {
                 progressLine.classList.remove('filled');
             }
         }
 
         /**
-         * Validate mobile number (must be exactly 10 digits)
+         * Validate Indian mobile number (must be exactly 10 digits, starting with 6-9)
          * @param {string} phoneNumber - The phone number to validate
          * @returns {boolean} True if valid, false otherwise
          */
-        function validatePhoneNumber(phoneNumber) {
-            const phoneRegex = /^[0-9]{10}$/;
+        function validateIndianPhoneNumber(phoneNumber) {
+            // Indian phone numbers: 10 digits, starting with 6-9
+            const phoneRegex = /^[6-9][0-9]{9}$/;
             return phoneRegex.test(phoneNumber);
         }
 
@@ -785,11 +866,12 @@
         }
 
         /**
-         * Generate a random 6-digit OTP
-         * @returns {string} The generated OTP
+         * Format phone number to international format with India country code
+         * @param {string} phoneNumber - The phone number to format
+         * @returns {string} Phone number in +91XXXXXXXXXX format
          */
-        function generateOTP() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
+        function formatPhoneNumber(phoneNumber) {
+            return '+91' + phoneNumber;
         }
 
         /**
@@ -801,15 +883,119 @@
             return input.trim();
         }
 
+        /**
+         * Set up the reCAPTCHA verifier for Firebase
+         */
+        function initializeRecaptcha() {
+            try {
+                if (!auth) {
+                    showStatusMessage('Firebase not configured. Please add your Firebase credentials.', 'error', 0);
+                    return false;
+                }
+
+                appState.reCaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptchaContainer', {
+                    'size': 'normal',
+                    'callback': (token) => {
+                        console.log('reCAPTCHA verified with token');
+                    },
+                    'expired-callback': () => {
+                        console.log('reCAPTCHA expired, please try again');
+                        appState.reCaptchaVerifier = null;
+                    }
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('reCAPTCHA initialization error:', error);
+                showStatusMessage('Failed to initialize security verification. Please refresh and try again.', 'error', 0);
+                return false;
+            }
+        }
+
+        /**
+         * Start timer for OTP resend countdown
+         */
+        function startOtpTimer() {
+            appState.timerSeconds = 60;
+            const timerElement = document.getElementById('timerText');
+            const timerCount = document.getElementById('timerCount');
+            const changeMobileBtn = document.getElementById('changeMobileBtn');
+
+            if (!timerElement) return;
+            
+            timerElement.style.display = 'block';
+
+            // Clear any existing timer
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+            }
+
+            // Update timer every second
+            appState.timerInterval = setInterval(() => {
+                appState.timerSeconds--;
+                if (timerCount) timerCount.textContent = appState.timerSeconds;
+
+                // When timer reaches 0, allow resending OTP
+                if (appState.timerSeconds <= 0) {
+                    clearInterval(appState.timerInterval);
+                    timerElement.style.display = 'none';
+                    if (changeMobileBtn) {
+                        changeMobileBtn.textContent = 'Resend OTP';
+                        changeMobileBtn.onclick = () => handleSendOTP();
+                    }
+                }
+            }, 1000);
+        }
+
+        /**
+         * Stop the OTP timer
+         */
+        function stopOtpTimer() {
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+        }
+
+        /**
+         * Parse Firebase error messages and provide user-friendly feedback
+         * @param {Error} error - Firebase error object
+         * @returns {string} User-friendly error message
+         */
+        function getFirebaseErrorMessage(error) {
+            const errorCode = error.code;
+            const errorMessages = {
+                'auth/invalid-phone-number': 'Invalid phone number. Please enter a valid 10-digit Indian mobile number starting with 6-9.',
+                'auth/missing-phone-number': 'Please enter your phone number.',
+                'auth/quota-exceeded': 'Too many SMS requests. Please try again in a few minutes.',
+                'auth/user-disabled': 'This account has been disabled. Please contact support.',
+                'auth/operation-not-allowed': 'Phone authentication is not enabled on this Firebase project.',
+                'auth/invalid-verification-code': 'Invalid OTP. Please check the code and try again.',
+                'auth/code-expired': 'The OTP has expired. Please request a new one.',
+                'auth/session-expired': 'Your session has expired. Please try again.',
+                'auth/invalid-credential': 'Invalid credentials. Please try again.',
+                'auth/too-many-requests': 'Too many login attempts. Please try again later.',
+                'auth/network-request-failed': 'Network error. Please check your internet connection and try again.'
+            };
+            
+            return errorMessages[errorCode] || error.message || 'An error occurred. Please try again.';
+        }
+
         /* ===========================
            FORM HANDLERS
            =========================== */
 
         /**
          * Handle the "Send OTP" button click
-         * Validates mobile number and role, generates OTP, and updates UI
+         * Sends OTP via Firebase Phone Authentication
          */
-        function handleSendOTP() {
+        async function handleSendOTP() {
+            // Validate Firebase is configured
+            if (!auth) {
+                showStatusMessage('Firebase is not configured. Please add your Firebase credentials to the HTML file.', 'error', 0);
+                return;
+            }
+
             // Clear previous messages and errors
             hideStatusMessage();
             clearFieldError('mobile');
@@ -824,8 +1010,8 @@
                 return;
             }
 
-            if (!validatePhoneNumber(mobileNumber)) {
-                showFieldError('mobile', 'Mobile number must be exactly 10 digits');
+            if (!validateIndianPhoneNumber(mobileNumber)) {
+                showFieldError('mobile', 'Please enter a valid 10-digit Indian mobile number (starting with 6-9)');
                 return;
             }
 
@@ -838,42 +1024,80 @@
                 return;
             }
 
-            // Update application state
-            appState.mobileNumber = mobileNumber;
-            appState.selectedRole = selectedRole;
-            appState.generatedOTP = generateOTP();
-            appState.isOtpSent = true;
-            appState.attemptCount = 0;
+            // Update button state - show loading spinner
+            const sendOtpBtn = document.getElementById('sendOtpBtn');
+            const sendOtpText = document.getElementById('sendOtpText');
+            sendOtpBtn.disabled = true;
+            sendOtpText.innerHTML = '<div class="spinner"></div> Sending...';
 
-            // Show success message
-            showStatusMessage(
-                `✓ OTP sent to ${mobileNumber}. Check the demo OTP below.`,
-                'success',
-                4000
-            );
+            try {
+                // Format phone number to international format
+                const phoneNumber = formatPhoneNumber(mobileNumber);
 
-            // Display OTP for demo purposes
-            const otpDisplay = document.getElementById('otpDisplay');
-            const otpDisplayCode = document.getElementById('otpDisplayCode');
-            otpDisplayCode.textContent = appState.generatedOTP;
-            otpDisplay.classList.add('show');
+                // Initialize reCAPTCHA if not already done
+                if (!appState.reCaptchaVerifier) {
+                    const initialized = initializeRecaptcha();
+                    if (!initialized) {
+                        throw new Error('Failed to initialize reCAPTCHA');
+                    }
+                }
 
-            // Update UI: hide Send OTP button, show Verify OTP buttons
-            document.getElementById('sendOtpButtonGroup').classList.add('hidden');
-            document.getElementById('otpGroup').classList.add('show');
-            document.getElementById('verifyOtpButtonGroup').classList.add('show');
+                // Send OTP via Firebase Phone Authentication
+                const confirmationResult = await auth.signInWithPhoneNumber(
+                    phoneNumber,
+                    appState.reCaptchaVerifier
+                );
 
-            // Disable inputs to prevent modification
-            mobileInput.disabled = true;
-            roleSelect.disabled = true;
+                // Store confirmation result for later OTP verification
+                appState.confirmationResult = confirmationResult;
+                appState.mobileNumber = mobileNumber;
+                appState.selectedRole = selectedRole;
+                appState.otpSent = true;
+                appState.attemptCount = 0;
 
-            // Update progress to step 2
-            updateProgressIndicator(2);
+                // Show success message
+                showStatusMessage(
+                    `✓ OTP sent to ${mobileNumber}. Check your SMS.`,
+                    'success',
+                    4000
+                );
 
-            // Auto-focus on OTP input field
-            setTimeout(() => {
-                document.getElementById('otpInput').focus();
-            }, 300);
+                // Update UI: hide Send OTP button, show Verify OTP buttons
+                document.getElementById('sendOtpButtonGroup').classList.add('hidden');
+                document.getElementById('otpGroup').classList.add('show');
+                document.getElementById('verifyOtpButtonGroup').classList.add('show');
+
+                // Disable inputs to prevent modification
+                mobileInput.disabled = true;
+                roleSelect.disabled = true;
+
+                // Update progress to step 2
+                updateProgressIndicator(2);
+
+                // Start OTP resend timer
+                startOtpTimer();
+
+                // Auto-focus on OTP input field
+                setTimeout(() => {
+                    const otpInput = document.getElementById('otpInput');
+                    if (otpInput) otpInput.focus();
+                }, 300);
+
+            } catch (error) {
+                console.error('Error sending OTP:', error);
+                const errorMessage = getFirebaseErrorMessage(error);
+                showStatusMessage(errorMessage, 'error', 0);
+                
+                // Reset reCAPTCHA on error
+                if (appState.reCaptchaVerifier) {
+                    appState.reCaptchaVerifier.clear();
+                    appState.reCaptchaVerifier = null;
+                }
+            } finally {
+                // Reset button state
+                sendOtpBtn.disabled = false;
+                sendOtpText.textContent = 'Send OTP';
+            }
         }
 
         /**
@@ -881,18 +1105,27 @@
          * Resets the form to initial state
          */
         function handleChangeMobile() {
+            // Stop the timer
+            stopOtpTimer();
+
             // Clear all input fields
-            document.getElementById('mobileNumber').value = '';
-            document.getElementById('mobileNumber').disabled = false;
-            document.getElementById('userRole').selectedIndex = 0;
-            document.getElementById('userRole').disabled = false;
-            document.getElementById('otpInput').value = '';
+            const mobileInput = document.getElementById('mobileNumber');
+            const roleSelect = document.getElementById('userRole');
+            const otpInput = document.getElementById('otpInput');
+
+            if (mobileInput) mobileInput.value = '';
+            if (mobileInput) mobileInput.disabled = false;
+            if (roleSelect) roleSelect.selectedIndex = 0;
+            if (roleSelect) roleSelect.disabled = false;
+            if (otpInput) otpInput.value = '';
 
             // Reset UI visibility
             document.getElementById('sendOtpButtonGroup').classList.remove('hidden');
             document.getElementById('otpGroup').classList.remove('show');
             document.getElementById('verifyOtpButtonGroup').classList.remove('show');
-            document.getElementById('otpDisplay').classList.remove('show');
+            
+            const timerText = document.getElementById('timerText');
+            if (timerText) timerText.style.display = 'none';
 
             // Clear all messages and errors
             hideStatusMessage();
@@ -901,22 +1134,34 @@
             clearFieldError('otp');
 
             // Reset application state
-            appState.isOtpSent = false;
-            appState.generatedOTP = '';
+            appState.otpSent = false;
+            appState.confirmationResult = null;
             appState.attemptCount = 0;
+
+            // Sign out from Firebase to clear session
+            if (auth) {
+                auth.signOut().catch(error => console.error('Sign out error:', error));
+            }
 
             // Update progress back to step 1
             updateProgressIndicator(1);
 
             // Auto-focus on mobile number input
-            document.getElementById('mobileNumber').focus();
+            if (mobileInput) mobileInput.focus();
+
+            // Reset button text
+            const changeMobileBtn = document.getElementById('changeMobileBtn');
+            if (changeMobileBtn) {
+                changeMobileBtn.textContent = 'Change Number';
+                changeMobileBtn.onclick = () => handleChangeMobile();
+            }
         }
 
         /**
          * Handle form submission (OTP verification)
          * @param {Event} event - Form submit event
          */
-        function handleFormSubmit(event) {
+        async function handleFormSubmit(event) {
             event.preventDefault();
 
             // Clear previous messages
@@ -924,7 +1169,7 @@
             clearFieldError('otp');
 
             // Check if OTP was sent
-            if (!appState.isOtpSent) {
+            if (!appState.otpSent || !appState.confirmationResult) {
                 showStatusMessage('Please send OTP first', 'error');
                 return;
             }
@@ -943,14 +1188,42 @@
                 return;
             }
 
-            // Verify OTP matches generated OTP
-            if (enteredOTP !== appState.generatedOTP) {
+            // Update button state - show loading spinner
+            const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+            const verifyOtpText = document.getElementById('verifyOtpText');
+            verifyOtpBtn.disabled = true;
+            verifyOtpText.innerHTML = '<div class="spinner"></div> Verifying...';
+
+            try {
+                // Verify OTP with Firebase
+                const result = await appState.confirmationResult.confirm(enteredOTP);
+                
+                // OTP verification successful!
+                appState.attemptCount = 0;
+                stopOtpTimer();
+
+                showStatusMessage(
+                    '✓ OTP verified successfully! Redirecting...',
+                    'success',
+                    2000
+                );
+
+                // Update progress to step 3 (completed)
+                updateProgressIndicator(3);
+
+                // Redirect user after 2 seconds
+                setTimeout(() => {
+                    redirectUser();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error verifying OTP:', error);
                 appState.attemptCount++;
 
                 // Check if max attempts exceeded
                 if (appState.attemptCount >= appState.maxAttempts) {
                     showStatusMessage(
-                        '❌ Maximum attempts exceeded. Please try again.',
+                        '❌ Maximum OTP verification attempts exceeded. Please request a new OTP.',
                         'error'
                     );
                     handleChangeMobile();
@@ -959,33 +1232,19 @@
 
                 // Show error with remaining attempts
                 const remainingAttempts = appState.maxAttempts - appState.attemptCount;
+                const errorMessage = getFirebaseErrorMessage(error);
                 showFieldError(
                     'otp',
-                    `Incorrect OTP. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining`
+                    `${errorMessage} (${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining)`
                 );
                 otpInput.value = '';
                 otpInput.focus();
-                return;
+
+            } finally {
+                // Reset button state
+                verifyOtpBtn.disabled = false;
+                verifyOtpText.textContent = 'Verify OTP';
             }
-
-            // OTP verification successful!
-            appState.attemptCount = 0;
-            showStatusMessage(
-                '✓ OTP verified successfully! Redirecting...',
-                'success',
-                2000
-            );
-
-            // Update progress to step 3 (completed)
-            updateProgressIndicator(3);
-
-            // Disable verify button
-            document.getElementById('verifyOtpBtn').disabled = true;
-
-            // Redirect user after 2 seconds
-            setTimeout(() => {
-                redirectUser();
-            }, 2000);
         }
 
         /**
@@ -1038,14 +1297,14 @@
 
         // Mobile number input: Allow Enter key to send OTP
         document.getElementById('mobileNumber').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && appState.isOtpSent === false) {
+            if (e.key === 'Enter' && !appState.otpSent) {
                 handleSendOTP();
             }
         });
 
         // OTP input: Allow Enter key to verify OTP
         document.getElementById('otpInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && appState.isOtpSent === true) {
+            if (e.key === 'Enter' && appState.otpSent) {
                 handleFormSubmit(new Event('submit'));
             }
         });
@@ -1054,9 +1313,23 @@
            INITIALIZATION
            =========================== */
 
-        // Set initial focus to mobile number input when page loads
+        // Set initial focus and initialize reCAPTCHA when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('mobileNumber').focus();
+            if (!firebase_initialized) {
+                showStatusMessage('⚠️ Firebase is not configured. Please add your Firebase credentials to the HTML file to enable phone authentication.', 'error', 0);
+                document.getElementById('sendOtpBtn').disabled = true;
+            }
+            
+            // Set focus to mobile number input
+            const mobileInput = document.getElementById('mobileNumber');
+            if (mobileInput) mobileInput.focus();
+
+            console.log('RapidReach Firebase Login Page Initialized');
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            stopOtpTimer();
         });
     </script>
 </body>
