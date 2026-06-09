@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RapidReach Login - Firebase Phone Authentication">
+    <title>RapidReach - Login</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-wrapper {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #DC143C, #FF6B6B);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 1.75rem;
+            margin: 0 0 0.5rem 0;
+            color: white;
+        }
+
+        .login-header p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .login-content {
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2C3E50;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #DC143C;
+            box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+        }
+
+        .phone-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .phone-input-wrapper input {
+            flex: 1;
+        }
+
+        .error-message {
+            color: #E74C3C;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .otp-input {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .otp-input input {
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+        }
+
+        .otp-input input:focus {
+            outline: none;
+            border-color: #DC143C;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-container button {
+            flex: 1;
+        }
+
+        .timer {
+            color: #DC143C;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .timer.disabled {
+            color: #A0AEC0;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #recaptcha-container {
+            margin: 1rem 0;
+        }
+
+        .progress-indicator {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-dot {
+            flex: 1;
+            height: 4px;
+            background: #E5E7EB;
+            border-radius: 2px;
+        }
+
+        .progress-dot.active,
+        .progress-dot.completed {
+            background: #DC143C;
+        }
+
+        .alert-box {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-box.show {
+            display: block;
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #E74C3C;
+            border-left: 4px solid #E74C3C;
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #27AE60;
+            border-left: 4px solid #27AE60;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <!-- Header -->
+        <div class="login-header">
+            <h1>🚑 RapidReach</h1>
+            <p>Emergency Response Platform</p>
+        </div>
+
+        <!-- Content -->
+        <div class="login-content">
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-dot active" id="step1-dot"></div>
+                <div class="progress-dot" id="step2-dot"></div>
+                <div class="progress-dot" id="step3-dot"></div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertBox" class="alert-box"></div>
+
+            <!-- Step 1: Phone Number -->
+            <div id="phoneSection" class="form-section active">
+                <h3>Enter Your Phone Number</h3>
+                <p style="color: #7F8C8D; margin-bottom: 1.5rem; font-size: 0.95rem;">We'll send you an OTP for verification</p>
+
+                <div class="input-group">
+                    <label for="phoneNumber">Phone Number with Country Code</label>
+                    <div class="phone-input-wrapper">
+                        <input type="tel" id="phoneNumber" placeholder="+91 98765 43210" maxlength="20">
+                    </div>
+                    <div class="error-message" id="phoneError"></div>
+                    <small style="color: #7F8C8D;">Example: +919876543210</small>
+                </div>
+
+                <!-- reCAPTCHA -->
+                <div id="recaptcha-container"></div>
+
+                <button class="btn btn-primary w-full" onclick="sendOTP()">Send OTP</button>
+            </div>
+
+            <!-- Step 2: OTP Verification -->
+            <div id="otpSection" class="form-section">
+                <h3>Enter OTP</h3>
+                <p style="color: #7F8C8D; margin-bottom: 1.5rem; font-size: 0.95rem;">We've sent a 6-digit code to your phone</p>
+
+                <div class="input-group">
+                    <label>One-Time Password</label>
+                    <div class="otp-input" id="otpInputs">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                        <input type="text" maxlength="1" class="otp-digit">
+                    </div>
+                    <div class="error-message" id="otpError"></div>
+                </div>
+
+                <div class="timer" id="otpTimer"></div>
+
+                <div class="btn-container">
+                    <button class="btn btn-secondary" onclick="goBackToPhone()">Back</button>
+                    <button class="btn btn-primary" onclick="verifyOTP()">Verify OTP</button>
+                </div>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-outline" style="border: none; color: #DC143C; cursor: pointer; font-size: 0.9rem;" onclick="resendOTP()">Resend OTP</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Role Selection -->
+            <div id="roleSection" class="form-section">
+                <h3>Select Your Role</h3>
+                <p style="color: #7F8C8D; margin-bottom: 1.5rem; font-size: 0.95rem;">Choose your role to continue</p>
+
+                <div style="display: grid; gap: 1rem;">
+                    <div class="card" onclick="selectRole('driver')" style="cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🚑</div>
+                        <h4>Ambulance Driver</h4>
+                        <p style="font-size: 0.9rem; color: #7F8C8D;">Real-time tracking & routing</p>
+                    </div>
+
+                    <div class="card" onclick="selectRole('publicUser')" style="cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🚗</div>
+                        <h4>Public User</h4>
+                        <p style="font-size: 0.9rem; color: #7F8C8D;">Find nearby ambulances</p>
+                    </div>
+
+                    <div class="card" onclick="selectRole('hospitalOperator')" style="cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏥</div>
+                        <h4>Hospital Operator</h4>
+                        <p style="font-size: 0.9rem; color: #7F8C8D;">Manage ambulances & patients</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary w-full" style="margin-top: 1.5rem;" onclick="goBackToPhone()">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
+
+    <!-- Configuration & Modules -->
+    <script src="config/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+
+    <script>
+        let otpResendTimer = 0;
+
+        // Phone Input Formatting
+        document.getElementById('phoneNumber')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s+/g, '');
+            if (!value.startsWith('+')) {
+                value = '+' + value;
+            }
+            e.target.value = value;
+        });
+
+        // OTP Input Auto-focus
+        document.querySelectorAll('.otp-digit').forEach((digit, index) => {
+            digit.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !digit.value && index > 0) {
+                    document.querySelectorAll('.otp-digit')[index - 1].focus();
+                }
+            });
+
+            digit.addEventListener('input', (e) => {
+                if (e.target.value && index < 5) {
+                    document.querySelectorAll('.otp-digit')[index + 1].focus();
+                }
+                if (e.target.value && /[^0-9]/.test(e.target.value)) {
+                    e.target.value = '';
+                }
+            });
+        });
+
+        async function sendOTP() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const phoneError = document.getElementById('phoneError');
+            const alertBox = document.getElementById('alertBox');
+
+            phoneError.classList.remove('show');
+            alertBox.classList.remove('show');
+
+            if (!phoneNumber) {
+                showError(phoneError, 'Please enter your phone number');
+                return;
+            }
+
+            try {
+                showAlert('Sending OTP...', 'info');
+                await window.rapidReachAuth.sendOTP(phoneNumber);
+                showAlert('OTP sent successfully! Check your SMS.', 'success');
+                switchToOTPSection();
+                startOTPTimer();
+            } catch (error) {
+                showError(phoneError, error.message || 'Error sending OTP');
+                showAlert(error.message || 'Error sending OTP', 'error');
+            }
+        }
+
+        async function verifyOTP() {
+            const digits = Array.from(document.querySelectorAll('.otp-digit')).map(d => d.value).join('');
+            const otpError = document.getElementById('otpError');
+            const alertBox = document.getElementById('alertBox');
+
+            otpError.classList.remove('show');
+            alertBox.classList.remove('show');
+
+            if (digits.length !== 6) {
+                showError(otpError, 'Please enter all 6 digits');
+                return;
+            }
+
+            try {
+                showAlert('Verifying OTP...', 'info');
+                const result = await window.rapidReachAuth.verifyOTP(digits);
+                
+                if (result.isNewUser) {
+                    showAlert('OTP verified! Select your role.', 'success');
+                    switchToRoleSection();
+                } else {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'driver-dashboard.html';
+                    }, 1000);
+                }
+            } catch (error) {
+                showError(otpError, error.message || 'Error verifying OTP');
+                showAlert(error.message || 'Error verifying OTP', 'error');
+            }
+        }
+
+        async function resendOTP() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            try {
+                await window.rapidReachAuth.resendOTP(phoneNumber);
+                showAlert('OTP resent successfully!', 'success');
+                startOTPTimer();
+            } catch (error) {
+                showAlert(error.message || 'Error resending OTP', 'error');
+            }
+        }
+
+        async function selectRole(role) {
+            try {
+                showAlert('Setting up your account...', 'info');
+                await window.rapidReachAuth.setUserRole(role);
+                
+                const roleRoutes = {
+                    'driver': 'driver-dashboard.html',
+                    'publicUser': 'public-dashboard.html',
+                    'hospitalOperator': 'hospital-dashboard.html'
+                };
+
+                showAlert('Setup complete! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = roleRoutes[role];
+                }, 1000);
+            } catch (error) {
+                showAlert(error.message || 'Error setting role', 'error');
+            }
+        }
+
+        function switchToOTPSection() {
+            updateProgress(1, 2, 3);
+            document.getElementById('phoneSection').classList.remove('active');
+            document.getElementById('otpSection').classList.add('active');
+            document.getElementById('roleSection').classList.remove('active');
+        }
+
+        function switchToRoleSection() {
+            updateProgress(1, 2, 3);
+            document.getElementById('phoneSection').classList.remove('active');
+            document.getElementById('otpSection').classList.remove('active');
+            document.getElementById('roleSection').classList.add('active');
+        }
+
+        function goBackToPhone() {
+            updateProgress(1);
+            document.getElementById('phoneSection').classList.add('active');
+            document.getElementById('otpSection').classList.remove('active');
+            document.getElementById('roleSection').classList.remove('active');
+            document.querySelectorAll('.otp-digit').forEach(d => d.value = '');
+        }
+
+        function updateProgress(step1, step2, step3) {
+            document.getElementById('step1-dot').classList.toggle('completed', step1);
+            document.getElementById('step1-dot').classList.toggle('active', step1);
+            document.getElementById('step2-dot').classList.toggle('completed', step2);
+            document.getElementById('step2-dot').classList.toggle('active', step2);
+            document.getElementById('step3-dot').classList.toggle('completed', step3);
+            document.getElementById('step3-dot').classList.toggle('active', step3);
+        }
+
+        function startOTPTimer() {
+            otpResendTimer = 60;
+            const timerEl = document.getElementById('otpTimer');
+            const resendBtn = document.querySelector('[onclick="resendOTP()"]');
+
+            resendBtn.disabled = true;
+
+            const interval = setInterval(() => {
+                otpResendTimer--;
+                timerEl.textContent = `Resend OTP in ${otpResendTimer}s`;
+
+                if (otpResendTimer <= 0) {
+                    clearInterval(interval);
+                    timerEl.textContent = '';
+                    resendBtn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.add('show');
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert-box show alert-${type}`;
+        }
+    </script>
+</body>
+</html>

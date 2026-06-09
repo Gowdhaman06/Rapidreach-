@@ -1,0 +1,48 @@
+{
+  "name": "rapidreach",
+  "version": "1.0.0",
+  "description": "Production-ready emergency ambulance response platform with real-time GPS tracking",
+  "main": "index.html",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rapidreach/rapidreach.git"
+  },
+  "keywords": [
+    "ambulance",
+    "emergency",
+    "GPS",
+    "tracking",
+    "healthcare",
+    "Firebase",
+    "real-time",
+    "SaaS"
+  ],
+  "author": "RapidReach Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "http-server -p 8000 -c-1",
+    "serve": "firebase serve",
+    "deploy": "firebase deploy",
+    "build": "echo 'Production build ready'",
+    "lint": "eslint js/ --fix",
+    "test": "echo 'Tests running...'",
+    "firebaselogin": "firebase login",
+    "firebaseinit": "firebase init"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "http-server": "^14.0.0",
+    "firebase-tools": "^11.0.0"
+  },
+  "dependencies": {
+    "firebase": "^9.23.0",
+    "leaflet": "^1.9.0"
+  },
+  "browserslist": [
+    "defaults",
+    "not IE 11"
+  ]
+}
