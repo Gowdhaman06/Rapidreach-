@@ -12,7 +12,8 @@
  * 7. Copy your web config and update below
  */
 
-// Firebase Configuration - REPLACE WITH YOUR FIREBASE PROJECT CONFIG
+// Firebase Configuration - DEMO PROJECT (FOR TESTING)
+// To use your own Firebase project, replace these credentials
 const firebaseConfig = {
     apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     authDomain: "rapidreach-xxxxx.firebaseapp.com",
@@ -24,18 +25,30 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+let auth, db, realtimeDb, messaging;
 try {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase initialized successfully");
+    
+    // Get Firebase Services
+    auth = firebase.auth();
+    db = firebase.firestore();
+    realtimeDb = firebase.database();
+    messaging = firebase.messaging();
 } catch (error) {
     console.error("❌ Firebase initialization error:", error);
+    console.warn("⚠️ Firebase not properly configured. Please add your credentials to config/firebase-config.js");
 }
 
-// Get Firebase Services
-const auth = firebase.auth();
-const db = firebase.firestore();
-const realtimeDb = firebase.database();
-const messaging = firebase.messaging();
+// Expose Firebase services globally for access in other modules
+window.firebaseConfig = {
+    firebase: firebase,
+    auth: auth,
+    db: db,
+    realtimeDb: realtimeDb,
+    messaging: messaging,
+    config: firebaseConfig
+};
 
 // Firebase App Check (Optional but Recommended)
 // firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider('YOUR_RECAPTCHA_KEY'));

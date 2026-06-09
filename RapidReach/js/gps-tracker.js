@@ -5,10 +5,11 @@
 
 class GPSTracker {
     constructor() {
-        this.db = window.firebaseConfig.realtimeDb;
-        this.firestore = window.firebaseConfig.db;
-        this.firebase = window.firebaseConfig.firebase;
-        this.auth = window.firebaseConfig.auth;
+        // Initialize Firebase references with safety checks
+        this.db = window.firebaseConfig?.realtimeDb;
+        this.firestore = window.firebaseConfig?.db;
+        this.firebase = window.firebaseConfig?.firebase;
+        this.auth = window.firebaseConfig?.auth;
         
         this.watchId = null;
         this.isTracking = false;
@@ -17,6 +18,15 @@ class GPSTracker {
         this.currentLocation = null;
         this.locationCache = [];
         this.maxCacheSize = 100;
+        this.listeners = [];
+        this.errorListeners = [];
+        
+        console.log('✅ GPSTracker initialized', {
+            firebaseAvailable: !!this.firebase,
+            authAvailable: !!this.auth,
+            dbAvailable: !!this.db,
+            firestoreAvailable: !!this.firestore
+        });
     }
 
     /**
