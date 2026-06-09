@@ -494,6 +494,61 @@
             alertBox.textContent = message;
             alertBox.className = `alert-box show alert-${type}`;
         }
+
+        // ============================================
+        // Firebase Initialization & Setup
+        // ============================================
+        
+        function initializeAuthModule() {
+            try {
+                // Check if Firebase is initialized
+                if (!window.firebaseConfig || !window.firebaseConfig.auth) {
+                    throw new Error('Firebase credentials not configured');
+                }
+                
+                // Create global auth instance
+                if (!window.rapidReachAuth) {
+                    window.rapidReachAuth = new RapidReachAuth();
+                    console.log('✅ Authentication module ready');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Auth initialization error:', error);
+                
+                // Show error to user
+                const alertBox = document.getElementById('alertBox');
+                alertBox.innerHTML = `
+                    <strong>⚠️ Configuration Error</strong><br>
+                    Firebase is not configured. Please follow the setup guide:<br>
+                    1. Go to <a href="FIREBASE_SETUP_DETAILED.md" target="_blank">FIREBASE_SETUP_DETAILED.md</a><br>
+                    2. Add your Firebase credentials to config/firebase-config.js<br>
+                    3. Refresh this page
+                `;
+                alertBox.className = 'alert-box show alert-error';
+                
+                // Disable all buttons
+                document.querySelectorAll('button[onclick="sendOTP()"]').forEach(btn => {
+                    btn.disabled = true;
+                    btn.textContent = 'Configure Firebase First';
+                });
+                
+                return false;
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait a moment for Firebase to fully initialize
+            setTimeout(initializeAuthModule, 1000);
+        });
+        
+        // Also try initializing when scripts are loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAuthModule);
+        } else {
+            setTimeout(initializeAuthModule, 1000);
+        }
     </script>
 </body>
 </html>
