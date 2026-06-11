@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="RapidReach - Ambulance Priority System Login with OTP Verification">
     <title>RapidReach - Ambulance Priority System Login</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js"></script>
+    
+    <!-- reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    
     <style>
         /* ===========================
            GLOBAL STYLES & VARIABLES
@@ -1059,5 +1070,11 @@
             document.getElementById('mobileNumber').focus();
         });
     </script>
+    
+    <!-- Firebase Configuration -->
+    <script src="config/firebase-config.js"></script>
+    
+    <!-- Authentication Module -->
+    <script src="js/auth.js"></script>
 </body>
 </html>

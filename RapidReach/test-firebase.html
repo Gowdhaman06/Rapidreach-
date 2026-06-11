@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidReach - Firebase Connection Test</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .test-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .test-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .test-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .test-result {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-result.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        .credentials-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        
+        .credentials-box p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚑 RapidReach</h1>
+            <p>Firebase Connection Test</p>
+        </div>
+        
+        <!-- Firebase SDK Test -->
+        <div class="test-section">
+            <div class="test-title">1. Firebase SDK</div>
+            <div id="firebaseSdkTest" class="test-result loading">
+                <span class="status-icon">⏳</span> Checking...
+            </div>
+        </div>
+        
+        <!-- Firebase Configuration Test -->
+        <div class="test-section">
+            <div class="test-title">2. Firebase Configuration</div>
+            <div id="firebaseConfigTest" class="test-result loading">
+                <span class="status-icon">⏳</span> Checking...
+            </div>
+        </div>
+        
+        <!-- Firebase Services Test -->
+        <div class="test-section">
+            <div class="test-title">3. Firebase Services</div>
+            <div id="firebaseServicesTest" class="test-result loading">
+                <span class="status-icon">⏳</span> Checking...
+            </div>
+        </div>
+        
+        <!-- Firestore Test -->
+        <div class="test-section">
+            <div class="test-title">4. Firestore Connection</div>
+            <div id="firestoreTest" class="test-result loading">
+                <span class="status-icon">⏳</span> Checking...
+            </div>
+        </div>
+        
+        <!-- Realtime Database Test -->
+        <div class="test-section">
+            <div class="test-title">5. Realtime Database Connection</div>
+            <div id="realtimeDbTest" class="test-result loading">
+                <span class="status-icon">⏳</span> Checking...
+            </div>
+        </div>
+        
+        <!-- Project Info -->
+        <div class="credentials-box">
+            <p><strong>Project ID:</strong> rapidreach-g2026</p>
+            <p><strong>Auth Domain:</strong> rapidreach-g2026.firebaseapp.com</p>
+            <p><strong>Status:</strong> <span id="overallStatus" style="color: #667eea; font-weight: 700;">Testing...</span></p>
+        </div>
+        
+        <div class="button-group">
+            <a href="login.html" class="btn btn-primary">Go to Login</a>
+            <a href="index.html" class="btn btn-secondary">Go to Home</a>
+        </div>
+    </div>
+    
+    <!-- Firebase Configuration -->
+    <script src="config/firebase-config.js"></script>
+    
+    <script>
+        const tests = {
+            firebaseSdk: document.getElementById('firebaseSdkTest'),
+            firebaseConfig: document.getElementById('firebaseConfigTest'),
+            firebaseServices: document.getElementById('firebaseServicesTest'),
+            firestore: document.getElementById('firestoreTest'),
+            realtimeDb: document.getElementById('realtimeDbTest'),
+            overallStatus: document.getElementById('overallStatus')
+        };
+        
+        let testsPassed = 0;
+        let testsTotal = 5;
+        
+        // Test 1: Firebase SDK
+        function testFirebaseSdk() {
+            if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+                tests.firebaseSdk.className = 'test-result success';
+                tests.firebaseSdk.innerHTML = '<span class="status-icon">✅</span> Firebase SDK loaded successfully';
+                testsPassed++;
+            } else {
+                tests.firebaseSdk.className = 'test-result error';
+                tests.firebaseSdk.innerHTML = '<span class="status-icon">❌</span> Firebase SDK not found';
+            }
+        }
+        
+        // Test 2: Firebase Configuration
+        function testFirebaseConfig() {
+            if (window.firebaseConfig && window.firebaseConfig.config) {
+                const config = window.firebaseConfig.config;
+                tests.firebaseConfig.className = 'test-result success';
+                tests.firebaseConfig.innerHTML = `
+                    <span class="status-icon">✅</span> Configuration loaded<br>
+                    <small>Project: ${config.projectId}</small><br>
+                    <small>API Key: ${config.apiKey.substring(0, 20)}...</small>
+                `;
+                testsPassed++;
+            } else {
+                tests.firebaseConfig.className = 'test-result error';
+                tests.firebaseConfig.innerHTML = '<span class="status-icon">❌</span> Configuration not loaded';
+            }
+        }
+        
+        // Test 3: Firebase Services
+        function testFirebaseServices() {
+            try {
+                const hasAuth = window.firebaseConfig && window.firebaseConfig.auth;
+                const hasDb = window.firebaseConfig && window.firebaseConfig.db;
+                const hasRealtime = window.firebaseConfig && window.firebaseConfig.realtimeDb;
+                const hasMessaging = window.firebaseConfig && window.firebaseConfig.messaging;
+                
+                if (hasAuth && hasDb && hasRealtime && hasMessaging) {
+                    tests.firebaseServices.className = 'test-result success';
+                    tests.firebaseServices.innerHTML = `
+                        <span class="status-icon">✅</span> All services initialized<br>
+                        <small>✓ Authentication</small><br>
+                        <small>✓ Firestore</small><br>
+                        <small>✓ Realtime Database</small><br>
+                        <small>✓ Messaging</small>
+                    `;
+                    testsPassed++;
+                } else {
+                    tests.firebaseServices.className = 'test-result error';
+                    let missing = [];
+                    if (!hasAuth) missing.push('Auth');
+                    if (!hasDb) missing.push('Firestore');
+                    if (!hasRealtime) missing.push('Realtime DB');
+                    if (!hasMessaging) missing.push('Messaging');
+                    tests.firebaseServices.innerHTML = `<span class="status-icon">❌</span> Missing: ${missing.join(', ')}`;
+                }
+            } catch (error) {
+                tests.firebaseServices.className = 'test-result error';
+                tests.firebaseServices.innerHTML = `<span class="status-icon">❌</span> Error: ${error.message}`;
+            }
+        }
+        
+        // Test 4: Firestore Connection
+        function testFirestore() {
+            try {
+                const db = window.firebaseConfig && window.firebaseConfig.db;
+                if (db) {
+                    tests.firestore.className = 'test-result success';
+                    tests.firestore.innerHTML = '<span class="status-icon">✅</span> Firestore connected and ready';
+                    testsPassed++;
+                } else {
+                    tests.firestore.className = 'test-result error';
+                    tests.firestore.innerHTML = '<span class="status-icon">❌</span> Firestore not initialized';
+                }
+            } catch (error) {
+                tests.firestore.className = 'test-result error';
+                tests.firestore.innerHTML = `<span class="status-icon">❌</span> Error: ${error.message}`;
+            }
+        }
+        
+        // Test 5: Realtime Database Connection
+        function testRealtimeDb() {
+            try {
+                const realtimeDb = window.firebaseConfig && window.firebaseConfig.realtimeDb;
+                if (realtimeDb) {
+                    tests.realtimeDb.className = 'test-result success';
+                    tests.realtimeDb.innerHTML = '<span class="status-icon">✅</span> Realtime Database connected and ready';
+                    testsPassed++;
+                } else {
+                    tests.realtimeDb.className = 'test-result error';
+                    tests.realtimeDb.innerHTML = '<span class="status-icon">❌</span> Realtime Database not initialized';
+                }
+            } catch (error) {
+                tests.realtimeDb.className = 'test-result error';
+                tests.realtimeDb.innerHTML = `<span class="status-icon">❌</span> Error: ${error.message}`;
+            }
+        }
+        
+        // Update overall status
+        function updateStatus() {
+            const percentage = Math.round((testsPassed / testsTotal) * 100);
+            if (testsPassed === testsTotal) {
+                tests.overallStatus.innerHTML = `✅ All Tests Passed (${testsPassed}/${testsTotal})`;
+                tests.overallStatus.style.color = '#27AE60';
+            } else if (testsPassed > 0) {
+                tests.overallStatus.innerHTML = `⚠️ ${testsPassed}/${testsTotal} Tests Passed`;
+                tests.overallStatus.style.color = '#FFA500';
+            } else {
+                tests.overallStatus.innerHTML = `❌ No Tests Passed`;
+                tests.overallStatus.style.color = '#E74C3C';
+            }
+        }
+        
+        // Run all tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testFirebaseSdk();
+                testFirebaseConfig();
+                testFirebaseServices();
+                testFirestore();
+                testRealtimeDb();
+                updateStatus();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -15,13 +15,14 @@
 // Firebase Configuration - Production Project
 // Project: rapidreach-g2026
 const firebaseConfig = {
-    apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    apiKey: "AIzaSyB1N1dtnTOJ8fQmdvwB4JI7pBsKi21gQII",
     authDomain: "rapidreach-g2026.firebaseapp.com",
     projectId: "rapidreach-g2026",
     storageBucket: "rapidreach-g2026.firebasestorage.app",
     messagingSenderId: "155360129709",
     appId: "1:155360129709:web:f574f126d947dd529f4c24",
-    databaseURL: "https://rapidreach-g2026.firebaseio.com"
+    databaseURL: "https://rapidreach-g2026.firebaseio.com",
+    measurementId: "G-M6YLKXL8E0"
 };
 
 // Initialize Firebase
