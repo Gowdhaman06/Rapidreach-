@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RapidReach - Ambulance Priority System Login with OTP Verification">
+    <title>RapidReach - Ambulance Priority System Login</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js"></script>
+    
+    <!-- reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    
+    <style>
+        /* ===========================
+           GLOBAL STYLES & VARIABLES
+           =========================== */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #DC143C; /* Crimson red - Ambulance theme */
+            --primary-dark: #B91C3A;
+            --primary-light: #FF6B6B;
+            --white: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-light: #7F8C8D;
+            --border-gray: #ECF0F1;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --background-light: #F8F9FA;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s ease;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--text-dark);
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ===========================
+           ANIMATION KEYFRAMES
+           =========================== */
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                width: 0;
+            }
+            to {
+                width: 100%;
+            }
+        }
+
+        /* ===========================
+           MAIN CONTAINER
+           =========================== */
+
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        /* ===========================
+           HEADER & BRANDING
+           =========================== */
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideInDown 0.5s ease-out;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: var(--white);
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .logo-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .login-header h1 {
+            font-size: 32px;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .login-header p {
+            font-size: 14px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        /* ===========================
+           FORM CARD
+           =========================== */
+
+        .login-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            animation: slideInUp 0.6s ease-out 0.1s backwards;
+        }
+
+        /* ===========================
+           FORM GROUPS & LABELS
+           =========================== */
+
+        .form-group {
+            margin-bottom: 24px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group label.required::after {
+            content: " *";
+            color: var(--error-red);
+        }
+
+        /* ===========================
+           INPUT FIELDS
+           =========================== */
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            font-size: 18px;
+            color: var(--primary-color);
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        input[type="tel"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 14px 14px 14px 44px;
+            border: 2px solid var(--border-gray);
+            border-radius: 10px;
+            font-size: 16px;
+            color: var(--text-dark);
+            background: var(--background-light);
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        input[type="tel"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+        }
+
+        input[type="tel"]:hover,
+        input[type="text"]:hover,
+        select:hover {
+            border-color: var(--primary-light);
+        }
+
+        /* Remove spinner from number input */
+        input[type="tel"]::-webkit-outer-spin-button,
+        input[type="tel"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Custom dropdown styling */
+        select {
+            cursor: pointer;
+            padding-right: 40px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23DC143C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 44px;
+        }
+
+        /* ===========================
+           ERROR MESSAGES
+           =========================== */
+
+        .error-message {
+            font-size: 13px;
+            color: var(--error-red);
+            margin-top: 6px;
+            display: none;
+            animation: slideInDown 0.3s ease-out;
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* ===========================
+           BUTTONS
+           =========================== */
+
+        .form-group.button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 28px;
+            margin-bottom: 0;
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            grid-column: 1 / -1;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-verify {
+            background: linear-gradient(135deg, var(--success-green), #229954);
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-verify:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #229954, var(--success-green));
+        }
+
+        .btn-verify:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-verify:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--border-gray);
+            color: var(--text-dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #E0E0E0;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ===========================
+           HIDDEN ELEMENTS
+           =========================== */
+
+        .form-group.hidden {
+            display: none;
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .form-group.hidden.show {
+            display: block;
+        }
+
+        /* ===========================
+           STATUS MESSAGES
+           =========================== */
+
+        .status-message {
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            animation: slideInDown 0.4s ease-out;
+            border-left: 4px solid;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--success-green);
+            border-left-color: var(--success-green);
+        }
+
+        .status-message.error {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--error-red);
+            border-left-color: var(--error-red);
+        }
+
+        .status-message.info {
+            background: rgba(52, 152, 219, 0.1);
+            color: #3498DB;
+            border-left-color: #3498DB;
+        }
+
+        /* ===========================
+           OTP DISPLAY
+           =========================== */
+
+        .otp-display {
+            background: linear-gradient(135deg, var(--background-light), var(--border-gray));
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .otp-display.show {
+            display: block;
+        }
+
+        .otp-display p {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .otp-code {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ===========================
+           PROGRESS INDICATOR
+           =========================== */
+
+        .progress-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .progress-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--border-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-light);
+            transition: var(--transition);
+            z-index: 2;
+        }
+
+        .progress-step.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .progress-step.completed {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        .progress-line {
+            position: absolute;
+            height: 2px;
+            background: var(--border-gray);
+            top: 19px;
+            left: 20px;
+            right: 20px;
+            z-index: 1;
+        }
+
+        .progress-line.filled {
+            background: var(--success-green);
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        /* ===========================
+           RESPONSIVE DESIGN
+           =========================== */
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 28px 20px;
+                border-radius: 12px;
+            }
+
+            .login-header h1 {
+                font-size: 26px;
+            }
+
+            .login-header {
+                margin-bottom: 32px;
+            }
+
+            input[type="tel"],
+            input[type="text"],
+            select {
+                padding: 12px 12px 12px 40px;
+                font-size: 16px;
+            }
+
+            .form-group.button-group {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+            }
+
+            .progress-indicator {
+                margin-bottom: 24px;
+            }
+
+            .progress-step {
+                width: 36px;
+                height: 36px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .login-header h1 {
+                font-size: 22px;
+            }
+
+            .login-card {
+                padding: 24px 16px;
+            }
+
+            .progress-indicator {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Login Container -->
+    <div class="login-container">
+        <!-- Header with Logo and Title -->
+        <div class="login-header">
+            <div class="logo-container">
+                <div class="logo-icon">🚑</div>
+                <h1>RapidReach</h1>
+            </div>
+            <p>Ambulance Priority System</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+            <!-- Status Message Container -->
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Progress Indicator: Step 1 (Mobile) -> Step 2 (OTP) -> Step 3 (Success) -->
+            <div class="progress-indicator">
+                <div class="progress-line"></div>
+                <div class="progress-step active" id="step1">1</div>
+                <div class="progress-step" id="step2">2</div>
+                <div class="progress-step" id="step3">3</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleFormSubmit(event)">
+                <!-- Mobile Number Input Group -->
+                <div class="form-group" id="mobileGroup">
+                    <label for="mobileNumber" class="required">Mobile Number</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📱</span>
+                        <input
+                            type="tel"
+                            id="mobileNumber"
+                            placeholder="Enter 10-digit mobile number"
+                            maxlength="10"
+                            inputmode="numeric"
+                            autocomplete="tel"
+                            aria-label="Mobile Number"
+                        />
+                    </div>
+                    <div class="error-message" id="mobileError"></div>
+                </div>
+
+                <!-- OTP Display for Demo Purpose -->
+                <div class="otp-display" id="otpDisplay">
+                    <p>Demo OTP (for testing):</p>
+                    <div class="otp-code" id="otpDisplayCode"></div>
+                </div>
+
+                <!-- OTP Input Group -->
+                <div class="form-group hidden" id="otpGroup">
+                    <label for="otpInput" class="required">Enter OTP</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔐</span>
+                        <input
+                            type="text"
+                            id="otpInput"
+                            placeholder="Enter 6-digit OTP"
+                            maxlength="6"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            aria-label="OTP Code"
+                        />
+                    </div>
+                    <div class="error-message" id="otpError"></div>
+                </div>
+
+                <!-- Role Selection Dropdown -->
+                <div class="form-group" id="roleGroup">
+                    <label for="userRole" class="required">Select Role</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <select id="userRole" aria-label="Select User Role">
+                            <option value="">-- Choose your role --</option>
+                            <option value="driver">🚨 Ambulance Driver</option>
+                            <option value="public">👥 Public User</option>
+                        </select>
+                    </div>
+                    <div class="error-message" id="roleError"></div>
+                </div>
+
+                <!-- Send OTP Button (Step 1) -->
+                <div class="form-group button-group" id="sendOtpButtonGroup">
+                    <button type="button" class="btn-primary" id="sendOtpBtn" onclick="handleSendOTP()">
+                        Send OTP
+                    </button>
+                </div>
+
+                <!-- Verify OTP Button Group (Step 2) -->
+                <div class="form-group button-group hidden" id="verifyOtpButtonGroup">
+                    <button type="button" class="btn-secondary" id="changeMobileBtn" onclick="handleChangeMobile()">
+                        Change Number
+                    </button>
+                    <button type="submit" class="btn-verify" id="verifyOtpBtn">
+                        Verify OTP
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        /* ===========================
+           STATE MANAGEMENT
+           =========================== */
+
+        // Global application state
+        const appState = {
+            mobileNumber: '',        // Stores user's mobile number
+            generatedOTP: '',        // Stores generated OTP
+            isOtpSent: false,        // Tracks if OTP has been sent
+            selectedRole: '',        // Stores selected role (driver or public)
+            attemptCount: 0,         // Tracks failed OTP verification attempts
+            maxAttempts: 3           // Maximum allowed OTP verification attempts
+        };
+
+        /* ===========================
+           UTILITY FUNCTIONS
+           =========================== */
+
+        /**
+         * Display status message with appropriate styling
+         * @param {string} message - The message text to display
+         * @param {string} type - Message type: 'success', 'error', or 'info'
+         * @param {number} duration - Auto-hide duration in milliseconds (0 for no auto-hide)
+         */
+        function showStatusMessage(message, type = 'info', duration = 5000) {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type} show`;
+
+            if (duration) {
+                setTimeout(() => {
+                    statusElement.classList.remove('show');
+                }, duration);
+            }
+        }
+
+        /**
+         * Hide the status message
+         */
+        function hideStatusMessage() {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.classList.remove('show');
+        }
+
+        /**
+         * Display error message for a specific form field
+         * @param {string} fieldId - The field identifier (without 'Error' suffix)
+         * @param {string} message - The error message to display
+         */
+        function showFieldError(fieldId, message) {
+            const errorElement = document.getElementById(`${fieldId}Error`);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            }
+        }
+
+        /**
+         * Clear error message for a specific form field
+         * @param {string} fieldId - The field identifier (without 'Error' suffix)
+         */
+        function clearFieldError(fieldId) {
+            const errorElement = document.getElementById(`${fieldId}Error`);
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.classList.remove('show');
+            }
+        }
+
+        /**
+         * Update the progress indicator based on current step
+         * @param {number} currentStep - Current step number (1, 2, or 3)
+         */
+        function updateProgressIndicator(currentStep) {
+            const steps = ['step1', 'step2', 'step3'];
+            const progressLine = document.querySelector('.progress-line');
+
+            // Update each step circle
+            steps.forEach((stepId, index) => {
+                const stepElement = document.getElementById(stepId);
+                const stepNumber = index + 1;
+
+                if (stepNumber < currentStep) {
+                    // Previous steps are marked as completed
+                    stepElement.className = 'progress-step completed';
+                } else if (stepNumber === currentStep) {
+                    // Current step is highlighted
+                    stepElement.className = 'progress-step active';
+                } else {
+                    // Future steps are inactive
+                    stepElement.className = 'progress-step';
+                }
+            });
+
+            // Animate progress line fill
+            if (currentStep > 1) {
+                progressLine.classList.add('filled');
+            } else {
+                progressLine.classList.remove('filled');
+            }
+        }
+
+        /**
+         * Validate mobile number (must be exactly 10 digits)
+         * @param {string} phoneNumber - The phone number to validate
+         * @returns {boolean} True if valid, false otherwise
+         */
+        function validatePhoneNumber(phoneNumber) {
+            const phoneRegex = /^[0-9]{10}$/;
+            return phoneRegex.test(phoneNumber);
+        }
+
+        /**
+         * Validate OTP format (must be exactly 6 digits)
+         * @param {string} otp - The OTP to validate
+         * @returns {boolean} True if valid, false otherwise
+         */
+        function validateOTP(otp) {
+            const otpRegex = /^[0-9]{6}$/;
+            return otpRegex.test(otp);
+        }
+
+        /**
+         * Generate a random 6-digit OTP
+         * @returns {string} The generated OTP
+         */
+        function generateOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        /**
+         * Sanitize user input by trimming whitespace
+         * @param {string} input - The input to sanitize
+         * @returns {string} Sanitized input
+         */
+        function sanitizeInput(input) {
+            return input.trim();
+        }
+
+        /* ===========================
+           FORM HANDLERS
+           =========================== */
+
+        /**
+         * Handle the "Send OTP" button click
+         * Validates mobile number and role, generates OTP, and updates UI
+         */
+        function handleSendOTP() {
+            // Clear previous messages and errors
+            hideStatusMessage();
+            clearFieldError('mobile');
+            clearFieldError('role');
+
+            // Get and validate mobile number
+            const mobileInput = document.getElementById('mobileNumber');
+            const mobileNumber = sanitizeInput(mobileInput.value);
+
+            if (!mobileNumber) {
+                showFieldError('mobile', 'Please enter your mobile number');
+                return;
+            }
+
+            if (!validatePhoneNumber(mobileNumber)) {
+                showFieldError('mobile', 'Mobile number must be exactly 10 digits');
+                return;
+            }
+
+            // Validate role selection
+            const roleSelect = document.getElementById('userRole');
+            const selectedRole = sanitizeInput(roleSelect.value);
+
+            if (!selectedRole) {
+                showFieldError('role', 'Please select your role');
+                return;
+            }
+
+            // Update application state
+            appState.mobileNumber = mobileNumber;
+            appState.selectedRole = selectedRole;
+            appState.generatedOTP = generateOTP();
+            appState.isOtpSent = true;
+            appState.attemptCount = 0;
+
+            // Show success message
+            showStatusMessage(
+                `✓ OTP sent to ${mobileNumber}. Check the demo OTP below.`,
+                'success',
+                4000
+            );
+
+            // Display OTP for demo purposes
+            const otpDisplay = document.getElementById('otpDisplay');
+            const otpDisplayCode = document.getElementById('otpDisplayCode');
+            otpDisplayCode.textContent = appState.generatedOTP;
+            otpDisplay.classList.add('show');
+
+            // Update UI: hide Send OTP button, show Verify OTP buttons
+            document.getElementById('sendOtpButtonGroup').classList.add('hidden');
+            document.getElementById('otpGroup').classList.add('show');
+            document.getElementById('verifyOtpButtonGroup').classList.add('show');
+
+            // Disable inputs to prevent modification
+            mobileInput.disabled = true;
+            roleSelect.disabled = true;
+
+            // Update progress to step 2
+            updateProgressIndicator(2);
+
+            // Auto-focus on OTP input field
+            setTimeout(() => {
+                document.getElementById('otpInput').focus();
+            }, 300);
+        }
+
+        /**
+         * Handle "Change Number" button click
+         * Resets the form to initial state
+         */
+        function handleChangeMobile() {
+            // Clear all input fields
+            document.getElementById('mobileNumber').value = '';
+            document.getElementById('mobileNumber').disabled = false;
+            document.getElementById('userRole').selectedIndex = 0;
+            document.getElementById('userRole').disabled = false;
+            document.getElementById('otpInput').value = '';
+
+            // Reset UI visibility
+            document.getElementById('sendOtpButtonGroup').classList.remove('hidden');
+            document.getElementById('otpGroup').classList.remove('show');
+            document.getElementById('verifyOtpButtonGroup').classList.remove('show');
+            document.getElementById('otpDisplay').classList.remove('show');
+
+            // Clear all messages and errors
+            hideStatusMessage();
+            clearFieldError('mobile');
+            clearFieldError('role');
+            clearFieldError('otp');
+
+            // Reset application state
+            appState.isOtpSent = false;
+            appState.generatedOTP = '';
+            appState.attemptCount = 0;
+
+            // Update progress back to step 1
+            updateProgressIndicator(1);
+
+            // Auto-focus on mobile number input
+            document.getElementById('mobileNumber').focus();
+        }
+
+        /**
+         * Handle form submission (OTP verification)
+         * @param {Event} event - Form submit event
+         */
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            // Clear previous messages
+            hideStatusMessage();
+            clearFieldError('otp');
+
+            // Check if OTP was sent
+            if (!appState.isOtpSent) {
+                showStatusMessage('Please send OTP first', 'error');
+                return;
+            }
+
+            // Get and validate entered OTP
+            const otpInput = document.getElementById('otpInput');
+            const enteredOTP = sanitizeInput(otpInput.value);
+
+            if (!enteredOTP) {
+                showFieldError('otp', 'Please enter the OTP');
+                return;
+            }
+
+            if (!validateOTP(enteredOTP)) {
+                showFieldError('otp', 'OTP must be exactly 6 digits');
+                return;
+            }
+
+            // Verify OTP matches generated OTP
+            if (enteredOTP !== appState.generatedOTP) {
+                appState.attemptCount++;
+
+                // Check if max attempts exceeded
+                if (appState.attemptCount >= appState.maxAttempts) {
+                    showStatusMessage(
+                        '❌ Maximum attempts exceeded. Please try again.',
+                        'error'
+                    );
+                    handleChangeMobile();
+                    return;
+                }
+
+                // Show error with remaining attempts
+                const remainingAttempts = appState.maxAttempts - appState.attemptCount;
+                showFieldError(
+                    'otp',
+                    `Incorrect OTP. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining`
+                );
+                otpInput.value = '';
+                otpInput.focus();
+                return;
+            }
+
+            // OTP verification successful!
+            appState.attemptCount = 0;
+            showStatusMessage(
+                '✓ OTP verified successfully! Redirecting...',
+                'success',
+                2000
+            );
+
+            // Update progress to step 3 (completed)
+            updateProgressIndicator(3);
+
+            // Disable verify button
+            document.getElementById('verifyOtpBtn').disabled = true;
+
+            // Redirect user after 2 seconds
+            setTimeout(() => {
+                redirectUser();
+            }, 2000);
+        }
+
+        /**
+         * Redirect user to appropriate dashboard based on selected role
+         */
+        function redirectUser() {
+            const role = appState.selectedRole;
+
+            // Map roles to their dashboard URLs
+            const validRoles = {
+                driver: 'driver-dashboard.html',
+                public: 'public-dashboard.html'
+            };
+
+            const redirectUrl = validRoles[role];
+
+            if (redirectUrl) {
+                // Navigate to the appropriate dashboard
+                window.location.href = redirectUrl;
+            } else {
+                // Safety check for invalid role
+                showStatusMessage(
+                    'Invalid role selected. Please try again.',
+                    'error'
+                );
+                handleChangeMobile();
+            }
+        }
+
+        /* ===========================
+           INPUT EVENT LISTENERS
+           =========================== */
+
+        // Mobile number input: Allow only digits (0-9)
+        document.getElementById('mobileNumber').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+            clearFieldError('mobile');
+        });
+
+        // OTP input: Allow only digits (0-9)
+        document.getElementById('otpInput').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+            clearFieldError('otp');
+        });
+
+        // Role selection: Clear errors when changed
+        document.getElementById('userRole').addEventListener('change', function(e) {
+            clearFieldError('role');
+        });
+
+        // Mobile number input: Allow Enter key to send OTP
+        document.getElementById('mobileNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && appState.isOtpSent === false) {
+                handleSendOTP();
+            }
+        });
+
+        // OTP input: Allow Enter key to verify OTP
+        document.getElementById('otpInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && appState.isOtpSent === true) {
+                handleFormSubmit(new Event('submit'));
+            }
+        });
+
+        /* ===========================
+           INITIALIZATION
+           =========================== */
+
+        // Set initial focus to mobile number input when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('mobileNumber').focus();
+        });
+    </script>
+    
+    <!-- Firebase Configuration -->
+    <script src="config/firebase-config.js"></script>
+    
+    <!-- Authentication Module -->
+    <script src="js/auth.js"></script>
+</body>
+</html>

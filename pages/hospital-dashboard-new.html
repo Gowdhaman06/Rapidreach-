@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidReach - Hospital Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            background: var(--bg-light);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .incoming-ambulances {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .ambulance-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ambulance-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .ambulance-card.selected {
+            background: rgba(220, 20, 60, 0.05);
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .ambulance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .ambulance-id {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.enroute {
+            background: rgba(255, 165, 0, 0.1);
+            color: var(--accent-color);
+        }
+
+        .status-badge.arrived {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .ambulance-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--gray-50);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            color: var(--text-light);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-family: var(--font-mono);
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-accept {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-decline {
+            background: var(--gray-300);
+            color: var(--text-primary);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .patient-queue {
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .queue-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .queue-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .queue-item:last-child {
+            border-bottom: none;
+        }
+
+        .queue-priority {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .priority-high {
+            background: var(--primary-color);
+        }
+
+        .priority-medium {
+            background: var(--accent-color);
+        }
+
+        .priority-low {
+            background: var(--secondary-color);
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                padding: 1rem;
+            }
+
+            #map {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container flex-between">
+            <div class="navbar-brand">
+                <span>🏥</span>
+                <span>RapidReach Hospital Portal</span>
+            </div>
+            <div class="navbar-user">
+                <span id="hospitalName" style="color: var(--text-secondary); font-weight: 500;"></span>
+                <button class="btn btn-secondary btn-small" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard -->
+    <div class="dashboard-grid">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Map -->
+            <div id="map"></div>
+
+            <!-- Incoming Ambulances -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">🚑 Incoming Ambulances</h3>
+                <div class="incoming-ambulances" id="ambulancesList">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+                        <p>No incoming ambulances</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Hospital Stats -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">📊 Status</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Incoming</div>
+                        <div class="stat-value" id="incomingCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Processing</div>
+                        <div class="stat-value" id="processingCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Beds Available</div>
+                        <div class="stat-value" id="bedsAvailable">12</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Queue -->
+            <div class="patient-queue">
+                <div class="queue-header">👥 Patient Queue</div>
+                <div class="queue-list" id="patientQueue">
+                    <div style="padding: 1rem; text-align: center; color: var(--text-light); font-size: 0.9rem;">
+                        No patients in queue
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hospital Info -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">ℹ️ Hospital Info</h3>
+                <div style="font-size: 0.95rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: var(--text-primary);">Location</div>
+                        <div style="color: var(--text-secondary);">Latitude: <span id="hospLat">--</span></div>
+                        <div style="color: var(--text-secondary);">Longitude: <span id="hospLng">--</span></div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: var(--text-primary);">Contact</div>
+                        <div style="color: var(--text-secondary);" id="hospPhone">--</div>
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="editHospital()">Edit Hospital Info</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Configuration & Modules -->
+    <script src="../config/firebase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/gps-tracker.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/route-protection.js"></script>
+
+    <script>
+        let map;
+        let hospitalLocation = { lat: 13.0827, lng: 80.2707 };
+        let hospitalMarker;
+        let ambulanceMarkers = {};
+        let incomingAmbulances = [];
+
+        async function initDashboard() {
+            // Check authentication
+            if (!await window.routeProtection.checkAuthentication()) {
+                return;
+            }
+
+            // Get user info
+            const user = await window.routeProtection.getUserInfo();
+            if (!user || user.role !== 'hospitalOperator') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('hospitalName').textContent = user.phoneNumber;
+
+            // Initialize map
+            initMap();
+
+            // Load hospital data
+            loadHospitalData();
+
+            // Subscribe to incoming ambulances
+            subscribeToIncomingAmbulances();
+        }
+
+        function initMap() {
+            map = L.map('map').setView([hospitalLocation.lat, hospitalLocation.lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(map);
+
+            hospitalMarker = L.marker([hospitalLocation.lat, hospitalLocation.lng], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Ctext y="50" font-size="60" font-weight="bold"%3E🏥%3C/text%3E%3C/svg%3E',
+                    iconSize: [40, 40]
+                })
+            }).bindPopup('<strong>Hospital</strong>').addTo(map);
+
+            document.getElementById('hospLat').textContent = hospitalLocation.lat.toFixed(6);
+            document.getElementById('hospLng').textContent = hospitalLocation.lng.toFixed(6);
+        }
+
+        async function loadHospitalData() {
+            try {
+                const user = window.firebaseConfig.auth.currentUser;
+                if (!user) return;
+
+                const db = window.firebaseConfig.db;
+                const doc = await db.collection('hospitals').doc(user.uid).get();
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    hospitalLocation = { lat: data.latitude || 13.0827, lng: data.longitude || 80.2707 };
+                    document.getElementById('hospPhone').textContent = data.phoneNumber || '--';
+                    document.getElementById('bedsAvailable').textContent = data.bedsAvailable || '12';
+                }
+            } catch (error) {
+                console.error('Error loading hospital data:', error);
+            }
+        }
+
+        function subscribeToIncomingAmbulances() {
+            const realtimeDb = window.firebaseConfig.realtimeDb;
+            
+            realtimeDb.ref('activeLocations').on('value', (snapshot) => {
+                incomingAmbulances = [];
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    if (data && data.latitude && data.longitude) {
+                        const distance = window.gpsTracker.constructor.calculateDistance(
+                            hospitalLocation.lat, hospitalLocation.lng,
+                            data.latitude, data.longitude
+                        );
+
+                        // Show ambulances within 10km
+                        if (distance < 10000) {
+                            incomingAmbulances.push({
+                                id: childSnapshot.key,
+                                ...data,
+                                distance: distance
+                            });
+
+                            updateAmbulanceMarker(data, childSnapshot.key);
+                        }
+                    }
+                });
+
+                updateAmbulancesList(incomingAmbulances.sort((a, b) => a.distance - b.distance));
+                updateStats();
+            });
+        }
+
+        function updateAmbulanceMarker(ambulance, id) {
+            if (ambulanceMarkers[id]) {
+                ambulanceMarkers[id].setLatLng([ambulance.latitude, ambulance.longitude]);
+            } else {
+                ambulanceMarkers[id] = L.marker([ambulance.latitude, ambulance.longitude], {
+                    icon: L.icon({
+                        iconUrl: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Ctext y="50" font-size="60" font-weight="bold"%3E🚑%3C/text%3E%3C/svg%3E',
+                        iconSize: [35, 35]
+                    })
+                }).bindPopup(`<strong>Ambulance</strong><br/>Distance: ${(ambulance.distance / 1000).toFixed(1)} km`).addTo(map);
+            }
+        }
+
+        function updateAmbulancesList(ambulances) {
+            const listEl = document.getElementById('ambulancesList');
+
+            if (ambulances.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+                        <p>No incoming ambulances</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = ambulances.map((amb, index) => `
+                <div class="ambulance-card">
+                    <div class="ambulance-header">
+                        <span class="ambulance-id">🚑 Ambulance #${index + 1}</span>
+                        <span class="status-badge enroute">En Route</span>
+                    </div>
+                    <div class="ambulance-info">
+                        <div class="info-item">
+                            <span class="info-label">Distance</span>
+                            <span class="info-value">${(amb.distance / 1000).toFixed(1)} km</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ETA</span>
+                            <span class="info-value">${formatETA(amb.distance)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Speed</span>
+                            <span class="info-value">${(amb.speed || 0).toFixed(1)} m/s</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Accuracy</span>
+                            <span class="info-value">${(amb.accuracy || 0).toFixed(0)} m</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="action-btn btn-accept" onclick="acceptAmbulance('${amb.id}')">✓ Accept</button>
+                        <button class="action-btn btn-decline" onclick="declineAmbulance('${amb.id}')">✕ Decline</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatETA(distance) {
+            const avgSpeed = 15; // m/s (54 km/h)
+            const seconds = Math.round(distance / avgSpeed);
+            const mins = Math.floor(seconds / 60);
+            return `${mins} min`;
+        }
+
+        function updateStats() {
+            document.getElementById('incomingCount').textContent = incomingAmbulances.length;
+        }
+
+        function acceptAmbulance(ambulanceId) {
+            window.notificationSystem.sendNotification({
+                type: 'success',
+                title: 'Ambulance Accepted',
+                message: 'Please prepare beds and staff for incoming patient'
+            });
+        }
+
+        function declineAmbulance(ambulanceId) {
+            if (confirm('Decline this ambulance?')) {
+                window.notificationSystem.sendNotification({
+                    type: 'info',
+                    title: 'Ambulance Declined',
+                    message: 'Hospital rejected ambulance routing'
+                });
+            }
+        }
+
+        function editHospital() {
+            window.notificationSystem.sendNotification({
+                type: 'info',
+                title: 'Edit Hospital',
+                message: 'Edit hospital information feature coming soon'
+            });
+        }
+
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                await window.routeProtection.logout();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
