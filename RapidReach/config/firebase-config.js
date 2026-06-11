@@ -12,16 +12,16 @@
  * 7. Copy your web config and update below
  */
 
-// Firebase Configuration - DEMO PROJECT (FOR TESTING)
-// To use your own Firebase project, replace these credentials
+// Firebase Configuration - Production Project
+// Project: rapidreach-g2026
 const firebaseConfig = {
     apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    authDomain: "rapidreach-xxxxx.firebaseapp.com",
-    projectId: "rapidreach-xxxxx",
-    storageBucket: "rapidreach-xxxxx.appspot.com",
-    messagingSenderId: "123456789xxx",
-    appId: "1:123456789xxx:web:xxxxxxxxxx",
-    databaseURL: "https://rapidreach-xxxxx.firebaseio.com"
+    authDomain: "rapidreach-g2026.firebaseapp.com",
+    projectId: "rapidreach-g2026",
+    storageBucket: "rapidreach-g2026.firebasestorage.app",
+    messagingSenderId: "155360129709",
+    appId: "1:155360129709:web:f574f126d947dd529f4c24",
+    databaseURL: "https://rapidreach-g2026.firebaseio.com"
 };
 
 // Initialize Firebase
