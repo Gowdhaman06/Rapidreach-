@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidReach - OTP Troubleshooting</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 16px 16px 0 0;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .logo { font-size: 48px; margin-bottom: 15px; }
+        .title { font-size: 32px; font-weight: 700; color: #333; margin-bottom: 5px; }
+        .subtitle { color: #666; }
+        
+        .content {
+            background: white;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section:last-child { border-bottom: none; }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .problem-box {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .solution-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .step-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+        
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+        }
+        
+        .error-message {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #856404;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .checklist {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .checklist-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checklist-item:last-child { border-bottom: none; }
+        
+        .checkbox { width: 20px; height: 20px; }
+        
+        .footer {
+            background: white;
+            border-radius: 0 0 16px 16px;
+            padding: 30px 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            color: #666;
+        }
+        
+        .video-link {
+            background: #f0f7ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🚑</div>
+            <div class="title">OTP Not Working?</div>
+            <div class="subtitle">Complete Troubleshooting Guide</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Problem Section -->
+            <div class="section">
+                <div class="section-title">❌ What Went Wrong</div>
+                
+                <div class="problem-box">
+                    <strong>Error Message:</strong><br>
+                    "Cannot read properties of undefined (reading 'sendOTP')"
+                </div>
+                
+                <p>This error occurs because:</p>
+                <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                    <li>Your Firebase credentials are not configured</li>
+                    <li>The authentication module couldn't initialize</li>
+                    <li>The system can't access Firebase services</li>
+                </ol>
+            </div>
+            
+            <!-- Solution Section -->
+            <div class="section">
+                <div class="section-title">✅ How to Fix (3 Steps)</div>
+                
+                <div class="solution-box">
+                    <strong>Root Cause:</strong> Firebase credentials must be added to config/firebase-config.js
+                </div>
+                
+                <!-- Step 1 -->
+                <div class="step-box">
+                    <span class="step-number">1</span>
+                    <strong>Create Firebase Project</strong><br>
+                    Go to <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a> and create a new project called "RapidReach"
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="step-box">
+                    <span class="step-number">2</span>
+                    <strong>Get Your Credentials</strong><br>
+                    In Firebase Console → Project Settings → Copy your config object with all 7 values:
+                    
+                    <div class="code-block">
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    databaseURL: "https://your-project.firebaseio.com"
+};
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="step-box">
+                    <span class="step-number">3</span>
+                    <strong>Update Configuration</strong><br>
+                    Open <code>config/firebase-config.js</code> and replace the placeholder config with your actual credentials
+                    
+                    <div class="error-message">
+                        ⚠️ Replace ALL values - make sure all 7 fields are present with YOUR credentials
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Verify Section -->
+            <div class="section">
+                <div class="section-title">🔍 Verify It's Working</div>
+                
+                <p>After updating the config file:</p>
+                
+                <ol style="margin-left: 20px; margin-top: 10px; line-height: 2;">
+                    <li>Refresh your browser (F5 or Ctrl+Shift+R)</li>
+                    <li>Open Developer Tools (F12)</li>
+                    <li>Go to Console tab</li>
+                    <li>You should see: <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">✅ Firebase initialized successfully</code></li>
+                    <li>Try sending OTP again - it should work!</li>
+                </ol>
+            </div>
+            
+            <!-- Checklist -->
+            <div class="section">
+                <div class="section-title">📋 Pre-Flight Checklist</div>
+                
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Firebase project created at console.firebase.google.com</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Phone Authentication enabled in Firebase</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Firestore Database created in Firebase</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Realtime Database created in Firebase</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Copied all 7 Firebase credentials</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Updated config/firebase-config.js with credentials</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Saved config file (Ctrl+S)</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Refreshed browser</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>Checked console shows ✅ Firebase initialized</span>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" class="checkbox">
+                        <span>OTP button works without errors</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Advanced Troubleshooting -->
+            <div class="section">
+                <div class="section-title">🔧 Still Having Issues?</div>
+                
+                <p><strong>Browser Console Shows Error:</strong></p>
+                <div class="error-message">
+                    ❌ Firebase initialization error: config is not defined
+                </div>
+                <p style="margin-top: 10px;"><strong>Solution:</strong> Check that your credentials are correctly pasted in config/firebase-config.js. Verify no typos and all commas are present.</p>
+                
+                <p style="margin-top: 15px;"><strong>OTP Button Still Shows Error:</strong></p>
+                <div class="error-message">
+                    Cannot read properties of undefined
+                </div>
+                <p style="margin-top: 10px;"><strong>Solution:</strong> Refresh browser with hard cache clear (Ctrl+Shift+R or Cmd+Shift+R)</p>
+                
+                <p style="margin-top: 15px;"><strong>"reCAPTCHA verification failed" Error:</strong></p>
+                <div class="error-message">
+                    reCAPTCHA not available
+                </div>
+                <p style="margin-top: 10px;"><strong>Solution:</strong> This requires proper Firebase reCAPTCHA setup. For testing, you can disable this in the code.</p>
+            </div>
+            
+            <!-- Next Steps -->
+            <div class="section">
+                <div class="section-title">🚀 What Happens After OTP Works</div>
+                
+                <ol style="margin-left: 20px; line-height: 2;">
+                    <li>Login page will accept phone numbers</li>
+                    <li>OTP will be sent to your phone via Firebase</li>
+                    <li>Enter 6-digit OTP to login</li>
+                    <li>Select your role (driver, public user, hospital operator, or admin)</li>
+                    <li>Access the dashboard for your role</li>
+                    <li>GPS tracking, real-time updates, and all features will work</li>
+                </ol>
+            </div>
+            
+            <!-- Links Section -->
+            <div class="section">
+                <div class="section-title">📖 Resources</div>
+                
+                <div class="button-group">
+                    <a href="FIREBASE_SETUP_DETAILED.md" target="_blank" class="btn btn-primary">
+                        📋 Full Setup Guide
+                    </a>
+                    <a href="firebase-setup-checklist.html" target="_blank" class="btn btn-primary">
+                        ✓ Interactive Checklist
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>📞 Need help? Check the setup guides or review the error messages in your browser console (F12)</p>
+            <p style="margin-top: 10px; font-size: 12px;">RapidReach Emergency Response Platform</p>
+        </div>
+    </div>
+</body>
+</html>

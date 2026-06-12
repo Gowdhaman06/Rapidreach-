@@ -5,11 +5,36 @@
 
 class RapidReachAuth {
     constructor() {
+        // Wait for Firebase to be initialized
+        if (!window.firebaseConfig || !window.firebaseConfig.auth) {
+            console.warn('⚠️ Firebase not yet initialized. Waiting...');
+            setTimeout(() => this.initializeAuth(), 500);
+            return;
+        }
+        
         this.auth = window.firebaseConfig.auth;
         this.db = window.firebaseConfig.db;
         this.firebase = window.firebaseConfig.firebase;
         this.confirmationResult = null;
         this.setupAuthStateListener();
+    }
+    
+    /**
+     * Initialize Auth when Firebase is ready
+     */
+    initializeAuth() {
+        if (!window.firebaseConfig || !window.firebaseConfig.auth) {
+            console.error('❌ Firebase initialization failed. Check your credentials in config/firebase-config.js');
+            this.auth = null;
+            return;
+        }
+        
+        this.auth = window.firebaseConfig.auth;
+        this.db = window.firebaseConfig.db;
+        this.firebase = window.firebaseConfig.firebase;
+        this.confirmationResult = null;
+        this.setupAuthStateListener();
+        console.log('✅ Auth module initialized');
     }
 
     /**
@@ -38,12 +63,27 @@ class RapidReachAuth {
      */
     async sendOTP(phoneNumber) {
         try {
+            // Check if Firebase is initialized
+            if (!this.auth) {
+                throw new Error('Firebase not initialized. Please check your credentials in config/firebase-config.js');
+            }
+
             // Validate phone number format
             if (!this.validatePhoneNumber(phoneNumber)) {
                 throw new Error('Invalid phone number format. Use +[country-code][number]');
             }
 
+            // Setup reCAPTCHA
+            if (!window.firebaseConfig.setupRecaptcha) {
+                throw new Error('reCAPTCHA not available');
+            }
+            
             window.firebaseConfig.setupRecaptcha();
+            
+            // Check if recaptchaVerifier is created
+            if (!window.recaptchaVerifier) {
+                throw new Error('reCAPTCHA verification failed. Please refresh and try again.');
+            }
             
             this.confirmationResult = await this.auth.signInWithPhoneNumber(
                 phoneNumber,
@@ -54,11 +94,16 @@ class RapidReachAuth {
             return { success: true, message: 'OTP sent successfully' };
         } catch (error) {
             console.error('❌ Error sending OTP:', error);
+            
+            // Better error messages
             if (error.code === 'auth/invalid-phone-number') {
-                throw new Error('Invalid phone number format');
+                throw new Error('Invalid phone number. Please use format +[country code][number]');
             } else if (error.code === 'auth/too-many-requests') {
                 throw new Error('Too many requests. Please try again later.');
+            } else if (error.message.includes('Firebase')) {
+                throw new Error('Firebase not configured. Add credentials to config/firebase-config.js');
             }
+            
             throw error;
         }
     }

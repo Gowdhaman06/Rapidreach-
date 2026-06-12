@@ -12,30 +12,44 @@
  * 7. Copy your web config and update below
  */
 
-// Firebase Configuration - REPLACE WITH YOUR FIREBASE PROJECT CONFIG
+// Firebase Configuration - Production Project
+// Project: rapidreach-g2026
 const firebaseConfig = {
-    apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    authDomain: "rapidreach-xxxxx.firebaseapp.com",
-    projectId: "rapidreach-xxxxx",
-    storageBucket: "rapidreach-xxxxx.appspot.com",
-    messagingSenderId: "123456789xxx",
-    appId: "1:123456789xxx:web:xxxxxxxxxx",
-    databaseURL: "https://rapidreach-xxxxx.firebaseio.com"
+    apiKey: "AIzaSyB1N1dtnTOJ8fQmdvwB4JI7pBsKi21gQII",
+    authDomain: "rapidreach-g2026.firebaseapp.com",
+    projectId: "rapidreach-g2026",
+    storageBucket: "rapidreach-g2026.firebasestorage.app",
+    messagingSenderId: "155360129709",
+    appId: "1:155360129709:web:f574f126d947dd529f4c24",
+    databaseURL: "https://rapidreach-g2026.firebaseio.com",
+    measurementId: "G-M6YLKXL8E0"
 };
 
 // Initialize Firebase
+let auth, db, realtimeDb, messaging;
 try {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase initialized successfully");
+    
+    // Get Firebase Services
+    auth = firebase.auth();
+    db = firebase.firestore();
+    realtimeDb = firebase.database();
+    messaging = firebase.messaging();
 } catch (error) {
     console.error("❌ Firebase initialization error:", error);
+    console.warn("⚠️ Firebase not properly configured. Please add your credentials to config/firebase-config.js");
 }
 
-// Get Firebase Services
-const auth = firebase.auth();
-const db = firebase.firestore();
-const realtimeDb = firebase.database();
-const messaging = firebase.messaging();
+// Expose Firebase services globally for access in other modules
+window.firebaseConfig = {
+    firebase: firebase,
+    auth: auth,
+    db: db,
+    realtimeDb: realtimeDb,
+    messaging: messaging,
+    config: firebaseConfig
+};
 
 // Firebase App Check (Optional but Recommended)
 // firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider('YOUR_RECAPTCHA_KEY'));

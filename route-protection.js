@@ -5,8 +5,16 @@
 
 class RouteProtection {
     constructor() {
-        this.auth = window.firebaseConfig.auth;
-        this.db = window.firebaseConfig.db;
+        // Safely get Firebase references
+        this.auth = window.firebaseConfig?.auth;
+        this.db = window.firebaseConfig?.db;
+        
+        // If Firebase not ready, wait a moment and retry
+        if (!this.auth || !this.db) {
+            console.warn('⚠️ Firebase not ready in RouteProtection constructor');
+            setTimeout(() => this.initialize(), 500);
+        }
+        
         this.allowedRoutes = {
             'driver': ['driver-dashboard.html', 'driver-profile.html', 'driver-vehicle.html'],
             'publicUser': ['public-dashboard.html', 'hospital-list.html', 'emergency-alert.html'],
@@ -17,11 +25,32 @@ class RouteProtection {
     }
 
     /**
+     * Initialize when Firebase is ready
+     */
+    initialize() {
+        if (!window.firebaseConfig?.auth) {
+            console.error('❌ Firebase still not available');
+            return;
+        }
+        this.auth = window.firebaseConfig.auth;
+        this.db = window.firebaseConfig.db;
+        console.log('✅ RouteProtection initialized');
+    }
+
+    /**
      * Check if User is Authenticated
      * Redirect to login if not
      */
     async checkAuthentication() {
         return new Promise((resolve) => {
+            // If Firebase not initialized, redirect to login
+            if (!this.auth) {
+                console.warn('⚠️ Firebase not initialized');
+                window.location.href = 'login.html';
+                resolve(false);
+                return;
+            }
+            
             const user = this.auth.currentUser;
             
             if (!user) {

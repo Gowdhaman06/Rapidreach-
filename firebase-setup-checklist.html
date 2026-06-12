@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidReach Firebase Setup Checklist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px 16px 0 0;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            font-size: 56px;
+            margin-bottom: 15px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .progress-bar {
+            background: white;
+            padding: 30px;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-step {
+            flex: 1;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.completed {
+            background: #4caf50;
+        }
+
+        .progress-step.current {
+            background: #2196f3;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+        }
+
+        .checklist {
+            background: white;
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .section {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: #f0f0f0;
+        }
+
+        .section-number {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .section.completed .section-number {
+            background: #4caf50;
+        }
+
+        .section-info {
+            flex: 1;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .section-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .section-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+
+        .section.expanded .section-icon {
+            transform: rotate(180deg);
+        }
+
+        .section-content {
+            padding: 20px 30px;
+            background: white;
+            display: none;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .section.expanded .section-content {
+            display: block;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checklist-item:hover {
+            background: #f8f9fa;
+        }
+
+        .checklist-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            display: none;
+        }
+
+        .checklist-item input[type="checkbox"]:checked + .checkbox {
+            background: #4caf50;
+            border-color: #4caf50;
+            color: white;
+        }
+
+        .checklist-item input[type="checkbox"]:checked + .checkbox:after {
+            content: "✓";
+            font-weight: bold;
+        }
+
+        .checklist-item input[type="checkbox"]:checked ~ .text {
+            color: #999;
+            text-decoration: line-through;
+        }
+
+        .text {
+            flex: 1;
+            color: #555;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .code-example {
+            background: #f5f5f5;
+            border-left: 3px solid #667eea;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            color: #333;
+        }
+
+        .note {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .summary {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .summary-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .summary-text {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .completion-badge {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .time-estimate {
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🚑</div>
+            <div class="title">RapidReach Firebase Setup</div>
+            <div class="subtitle">Interactive Checklist</div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar" id="progressBar"></div>
+
+        <!-- Checklist -->
+        <div class="checklist" id="checklist"></div>
+
+        <!-- Summary -->
+        <div class="summary" id="summary" style="display: none;">
+            <div class="summary-title">🎉 Setup Complete!</div>
+            <div class="summary-text">
+                Your Firebase configuration is ready. RapidReach is now fully functional with real-time GPS tracking, phone authentication, and live location updates.
+            </div>
+            <div class="summary-actions">
+                <button class="btn btn-primary" onclick="goToDashboard()">Go to RapidReach</button>
+                <button class="btn btn-secondary" onclick="location.reload()">Start Over</button>
+            </div>
+        </div>
+
+        <div class="time-estimate">
+            Total estimated time: ~10 minutes
+        </div>
+    </div>
+
+    <script>
+        const sections = [
+            {
+                title: "Create Firebase Project",
+                time: "2 min",
+                items: [
+                    "Go to https://console.firebase.google.com/",
+                    "Click 'Create a project'",
+                    'Enter project name: "RapidReach"',
+                    "Click 'Continue' and wait for project creation (1-2 minutes)",
+                    "✅ You should see 'RapidReach' dashboard"
+                ]
+            },
+            {
+                title: "Enable Phone Authentication",
+                time: "1 min",
+                items: [
+                    "Go to: Build → Authentication",
+                    "Click 'Get Started'",
+                    "Click 'Phone' option",
+                    "Toggle to ENABLE (blue switch)",
+                    "Click 'Save'",
+                    "✅ Phone authentication enabled"
+                ]
+            },
+            {
+                title: "Create Firestore Database",
+                time: "2 min",
+                items: [
+                    "Go to: Build → Firestore Database",
+                    "Click 'Create database'",
+                    "Select your region",
+                    "Choose 'Production mode'",
+                    "Click 'Create' and wait 1 minute",
+                    "✅ Firestore database ready"
+                ]
+            },
+            {
+                title: "Create Realtime Database",
+                time: "2 min",
+                items: [
+                    "Go to: Build → Realtime Database",
+                    "Click 'Create Database'",
+                    "Keep default region",
+                    "Choose 'Locked mode'",
+                    "Click 'Enable' and wait 1 minute",
+                    "✅ Realtime database ready"
+                ]
+            },
+            {
+                title: "Get Firebase Credentials",
+                time: "2 min",
+                items: [
+                    "Click ⚙️ Settings icon (top right)",
+                    "Click 'Project settings'",
+                    "Scroll to 'Your apps' section",
+                    "Look for web app icon '</>' or click 'Add app'",
+                    "Copy the entire firebaseConfig object",
+                    "✅ Credentials copied to clipboard"
+                ]
+            },
+            {
+                title: "Update RapidReach Config",
+                time: "1 min",
+                items: [
+                    "Open: config/firebase-config.js in VS Code",
+                    "Find: const firebaseConfig = { ... }",
+                    "Replace ALL values with your copied credentials",
+                    "Make sure all 7 fields are present (apiKey, authDomain, etc.)",
+                    "Save file (Ctrl+S)",
+                    "✅ Configuration updated"
+                ]
+            },
+            {
+                title: "Set Security Rules (Optional)",
+                time: "2 min",
+                items: [
+                    "Go to: Firestore Database → Rules tab",
+                    "Replace content with rules from FIREBASE_SETUP_DETAILED.md",
+                    "Click 'Publish'",
+                    "Go to: Realtime Database → Rules tab",
+                    "Replace content with rules from FIREBASE_SETUP_DETAILED.md",
+                    "Click 'Publish'",
+                    "✅ Security rules configured"
+                ]
+            },
+            {
+                title: "Test & Verify",
+                time: "2 min",
+                items: [
+                    "Refresh your browser (F5 or Ctrl+Shift+R)",
+                    "Open browser console (F12)",
+                    "Look for: ✅ Firebase initialized successfully",
+                    "Go to login and test with a phone number",
+                    "Check Firebase Console → Authentication for request",
+                    "✅ Everything working!"
+                ]
+            }
+        ];
+
+        function initChecklist() {
+            const checklist = document.getElementById('checklist');
+            const progressBar = document.getElementById('progressBar');
+
+            // Create progress steps
+            sections.forEach((_, index) => {
+                const step = document.createElement('div');
+                step.className = `progress-step ${index === 0 ? 'current' : ''}`;
+                step.id = `progress-${index}`;
+                progressBar.appendChild(step);
+            });
+
+            // Create sections
+            sections.forEach((section, index) => {
+                const sectionEl = document.createElement('div');
+                sectionEl.className = 'section ' + (index === 0 ? 'expanded' : '');
+
+                sectionEl.innerHTML = `
+                    <div class="section-header" onclick="toggleSection(${index})">
+                        <div class="section-number">${index + 1}</div>
+                        <div class="section-info">
+                            <div class="section-title">${section.title}</div>
+                            <div class="section-time">⏱️ ${section.time}</div>
+                        </div>
+                        <div class="section-icon">▼</div>
+                    </div>
+                    <div class="section-content">
+                        <div id="items-${index}"></div>
+                        <div class="note">
+                            📌 Mark items as you complete them. The progress bar will update automatically.
+                        </div>
+                    </div>
+                `;
+
+                checklist.appendChild(sectionEl);
+
+                // Add checklist items
+                const itemsContainer = document.getElementById(`items-${index}`);
+                section.items.forEach((item, itemIndex) => {
+                    const itemEl = document.createElement('label');
+                    itemEl.className = 'checklist-item';
+                    itemEl.innerHTML = `
+                        <input type="checkbox" onchange="updateProgress()">
+                        <div class="checkbox"></div>
+                        <div class="text">${item}</div>
+                    `;
+                    itemsContainer.appendChild(itemEl);
+                });
+            });
+
+            updateProgress();
+        }
+
+        function toggleSection(index) {
+            const section = document.querySelectorAll('.section')[index];
+            section.classList.toggle('expanded');
+        }
+
+        function updateProgress() {
+            const totalItems = document.querySelectorAll('.checklist-item input').length;
+            const checkedItems = document.querySelectorAll('.checklist-item input:checked').length;
+
+            // Update progress bar
+            sections.forEach((_, index) => {
+                const sectionEl = document.querySelectorAll('.section')[index];
+                const sectionItems = sectionEl.querySelectorAll('.checklist-item input');
+                const sectionChecked = sectionEl.querySelectorAll('.checklist-item input:checked');
+
+                const progress = document.getElementById(`progress-${index}`);
+                if (sectionChecked.length === sectionItems.length) {
+                    progress.classList.add('completed');
+                    progress.classList.remove('current');
+                    sectionEl.classList.add('completed');
+                } else if (sectionChecked.length > 0) {
+                    progress.classList.add('current');
+                    progress.classList.remove('completed');
+                } else {
+                    progress.classList.remove('completed', 'current');
+                }
+            });
+
+            // Check if all complete
+            if (checkedItems === totalItems) {
+                document.getElementById('checklist').style.display = 'none';
+                document.getElementById('summary').style.display = 'block';
+            }
+        }
+
+        function goToDashboard() {
+            window.location.href = 'login.html';
+        }
+
+        window.addEventListener('load', initChecklist);
+    </script>
+</body>
+</html>

@@ -5,14 +5,23 @@
 
 class NotificationSystem {
     constructor() {
-        this.db = window.firebaseConfig.db;
-        this.messaging = window.firebaseConfig.messaging;
-        this.auth = window.firebaseConfig.auth;
-        this.firebase = window.firebaseConfig.firebase;
+        // Safely get Firebase references
+        this.db = window.firebaseConfig?.db;
+        this.messaging = window.firebaseConfig?.messaging;
+        this.auth = window.firebaseConfig?.auth;
+        this.firebase = window.firebaseConfig?.firebase;
+        
         this.notifications = [];
         this.maxNotifications = 50;
         this.soundEnabled = true;
-        this.initializeNotificationSystem();
+        
+        // Initialize when ready
+        if (this.db && this.messaging && this.auth) {
+            this.initializeNotificationSystem();
+        } else {
+            console.warn('⚠️ Firebase not fully initialized, retrying notification system...');
+            setTimeout(() => this.initializeNotificationSystem(), 1000);
+        }
     }
 
     /**
@@ -24,7 +33,9 @@ class NotificationSystem {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
                     console.log('✅ Notification permission granted');
-                    window.firebaseConfig.requestNotificationPermission();
+                    if (window.firebaseConfig?.requestNotificationPermission) {
+                        window.firebaseConfig.requestNotificationPermission();
+                    }
                 }
             });
         }
